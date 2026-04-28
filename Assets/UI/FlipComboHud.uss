@@ -1,0 +1,108 @@
+.combo-root {
+    flex-grow: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 22%;
+}
+
+.live-flip-wrap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 11%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.live-flip-bar {
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.live-flip-wrap.hidden {
+    display: none;
+}
+
+.live-flip-label {
+    font-size: 148px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(255, 245, 180);
+    text-shadow: 0 6px 0 rgb(20, 20, 50), 0 14px 40px rgb(140, 60, 200);
+}
+
+.live-flip-label.tier-live-zero {
+    font-size: 88px;
+    opacity: 0.45;
+    color: rgb(180, 200, 220);
+}
+
+.live-flip-label.tier-low {
+    font-size: 128px;
+    color: rgb(120, 220, 255);
+    text-shadow: 0 5px 0 rgb(10, 40, 60), 0 10px 28px rgb(60, 120, 200);
+}
+
+.live-flip-label.tier-mid {
+    font-size: 148px;
+    color: rgb(255, 220, 90);
+}
+
+.live-flip-label.tier-high {
+    font-size: 168px;
+    color: rgb(255, 90, 200);
+    text-shadow: 0 8px 0 rgb(70, 0, 70), 0 16px 44px rgb(255, 100, 255);
+}
+
+.live-flip-meter {
+    margin-top: 14px;
+    width: 70%;
+    height: 14px;
+    border-radius: 5px;
+    background-color: rgba(20, 15, 40, 0.65);
+}
+
+.live-flip-meter-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: 5px;
+    background-color: rgb(255, 110, 200);
+}
+
+.live-flip-label.idle-flash {
+    color: rgb(255, 140, 160);
+}
+
+.combo-popup-label {
+    position: relative;
+    font-size: 120px;
+    -unity-font-style: bold;
+    color: rgb(255, 240, 120);
+    -unity-text-align: middle-center;
+    text-shadow: 0 6px 0 rgb(30, 10, 60), 0 12px 36px rgb(180, 40, 200);
+}
+
+.combo-popup-label.tier-low {
+    color: rgb(120, 220, 255);
+    font-size: 108px;
+    text-shadow: 0 5px 0 rgb(10, 40, 60), 0 10px 28px rgb(60, 120, 200);
+}
+
+.combo-popup-label.tier-mid {
+    color: rgb(255, 220, 90);
+    font-size: 120px;
+}
+
+.combo-popup-label.tier-high {
+    color: rgb(255, 90, 200);
+    font-size: 140px;
+    text-shadow: 0 8px 0 rgb(70, 0, 70), 0 16px 40px rgb(255, 100, 255);
+}
