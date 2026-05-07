@@ -567,6 +567,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1023827553}
   - component: {fileID: 1023827552}
+  - component: {fileID: 1023827554}
   m_Layer: 0
   m_Name: Virtual Camera
   m_TagString: Untagged
@@ -629,6 +630,24 @@ Transform:
   - {fileID: 1425096981}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1023827554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1023827551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cea45702dde70486eb5fc34d45d13765, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraHeightZoom
+  vcam: {fileID: 1023827552}
+  baseOrthoSize: 12.12
+  orthoSizePerUnit: 0.3
+  baseFollowOffset: {x: 0, y: 2.6, z: -10}
+  followOffsetYPerUnit: 0.3
+  smoothSpeed: 3
 --- !u!1 &1204538549
 GameObject:
   m_ObjectHideFlags: 0
@@ -741,29 +760,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01963b61d8bbb4e94a1a9bac50bdc9f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  flipDegreesPerSecondStart: 360
-  flipDegreesPerSecondMax: 650
-  flipRampSecondsToMax: 1.2
-  idleAngularDamping: 6
-  releaseAngularMomentumFactor: 0.85
-  degreesPerSuccessfulSpin: 360
-  bounceBonusPerSuccessfulSpin: 0.2
-  firstFlipFlatBonus: 0.01
-  maxSpinsForBounceBonus: 200
-  carryBounceRetention: 1
+  flipSpeedStart: 360
+  flipSpeedMax: 600
+  flipRampSeconds: 1.2
+  releaseAngularMomentumFactor: 0.762
+  spinBoostStartHeight: 8
+  spinBoostPerUnit: 35
+  bounceBonusPerFlip: 0.18
+  maxFlipsForBonus: 70
+  maxLandingAngle: 30
+  perfectLandingAngle: 5
+  apexSpeedThreshold: 2.5
+  apexGravityScale: 0.18
+  apexHeightScaleMax: 3
+  apexHeightForFullScale: 40
+  maxFallSpeed: 30
   freezeHorizontalPosition: 1
-  maxUprightAngleDeg: 90
-  centerTouchViewportRect:
+  centerTouchRect:
     serializedVersion: 2
     x: 0.25
     y: 0.25
     width: 0.5
     height: 0.5
-  apexSpeedThreshold: 2.5
-  apexGravityScale: 0.18
-  flipBoostStartHeight: 8
-  flipBoostDegreesPerUnit: 25
-  playSurfaceForAltitudeEvents: {fileID: 1482935165}
+  playSurfaceCollider: {fileID: 1482935165}
 --- !u!1 &1425096980
 GameObject:
   m_ObjectHideFlags: 3
@@ -1008,7 +1027,6 @@ GameObject:
   - component: {fileID: 1598337226}
   - component: {fileID: 1598337225}
   - component: {fileID: 1598337224}
-  - component: {fileID: 1598337227}
   m_Layer: 5
   m_Name: UIDocument
   m_TagString: Untagged
@@ -1077,170 +1095,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1598337227
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1598337223}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c8a1f0e9d7c64b2aa1b2c3d4e5f60789, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MinimapRevealController
-  player: {fileID: 1204538552}
-  groundCollider: {fileID: 1482935165}
-  minHeightAboveGround: 6
-  minimapCameraRoot: {fileID: 1876500001}
-  chromeVisualElementName: minimap-chrome
---- !u!1 &1876500001
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1876500002}
-  - component: {fileID: 1876500003}
-  - component: {fileID: 1876500004}
-  - component: {fileID: 1876500005}
-  m_Layer: 0
-  m_Name: close corner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1876500002
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1876500001}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.86, y: -9.02, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!20 &1876500003
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1876500001}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 1}
-  m_projectionMatrixMode: 1
-  m_GateFitMode: 2
-  m_FOVAxisMode: 0
-  m_Iso: 200
-  m_ShutterSpeed: 0.005
-  m_Aperture: 16
-  m_FocusDistance: 10
-  m_FocalLength: 50
-  m_BladeCount: 5
-  m_Curvature: {x: 2, y: 11}
-  m_BarrelClipping: 0.25
-  m_Anamorphism: 0
-  m_SensorSize: {x: 36, y: 24}
-  m_LensShift: {x: 0, y: 0}
-  m_NormalizedViewPortRect:
-    serializedVersion: 2
-    x: 0.744
-    y: 0.58
-    width: 0.22
-    height: 0.22
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 34
-  orthographic: 1
-  orthographic size: 3.6
-  m_Depth: 10
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetEye: 0
-  m_HDR: 1
-  m_AllowMSAA: 0
-  m_AllowDynamicResolution: 0
-  m_ForceIntoRT: 0
-  m_OcclusionCulling: 0
-  m_StereoConvergence: 10
-  m_StereoSeparation: 0.022
---- !u!114 &1876500004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1876500001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 2
-  m_RequiresOpaqueTextureOption: 2
-  m_CameraType: 0
-  m_Cameras: []
-  m_RendererIndex: -1
-  m_VolumeLayerMask:
-    serializedVersion: 2
-    m_Bits: 1
-  m_VolumeTrigger: {fileID: 0}
-  m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
-  m_Antialiasing: 0
-  m_AntialiasingQuality: 2
-  m_StopNaN: 0
-  m_Dithering: 0
-  m_ClearDepth: 1
-  m_AllowXRRendering: 1
-  m_AllowHDROutput: 1
-  m_UseScreenCoordOverride: 0
-  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
-  m_RequiresDepthTexture: 0
-  m_RequiresColorTexture: 0
-  m_TaaSettings:
-    m_Quality: 3
-    m_FrameInfluence: 0.1
-    m_JitterScale: 1
-    m_MipBias: 0
-    m_VarianceClampScale: 0.9
-    m_ContrastAdaptiveSharpening: 0
-  m_Version: 2
---- !u!114 &1876500005
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1876500001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3d7c0b52a4f4128b7e6d5c4b3a29180, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseCornerFollowCamera
-  target: {fileID: 1204538552}
-  worldZ: -10
-  horizontalOffset: 0
-  followVertical: 1
-  verticalOffset: 0
-  fixedWorldY: -9.02
 --- !u!1 &1880100001
 GameObject:
   m_ObjectHideFlags: 0
@@ -1283,4 +1137,3 @@ SceneRoots:
   - {fileID: 1482935167}
   - {fileID: 1204538552}
   - {fileID: 1023827553}
-  - {fileID: 1876500002}

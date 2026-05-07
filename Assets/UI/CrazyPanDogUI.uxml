@@ -1,103 +1,80 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
-    <ui:Style src="CrazyPanDogUI.uss" />
-
-    <!-- ═══════════ START SCREEN ═══════════ -->
-    <ui:VisualElement name="start-screen" class="start-screen" picking-mode="Ignore">
-        <ui:VisualElement class="title-wrap" picking-mode="Ignore">
-            <ui:Label text="CRAZY" class="title-label title-line-1" />
-            <ui:Label text="PAN" class="title-label title-line-2" />
-            <ui:Label text="DOG" class="title-label title-line-3" />
+    <Style src="project://database/Assets/UI/CrazyPanDogUI.uss?fileID=7433441132597879392&amp;guid=13c0427b0d8b64f3cb637ba695409138&amp;type=3#CrazyPanDogUI"/>
+    <ui:VisualElement name="start-screen" picking-mode="Ignore" class="start-screen">
+        <ui:VisualElement picking-mode="Ignore" class="title-wrap">
+            <ui:Label text="CRAZY" class="title-label title-line-1"/>
+            <ui:Label text="PAN" class="title-label title-line-2"/>
+            <ui:Label text="DOG" class="title-label title-line-3"/>
         </ui:VisualElement>
-
-        <ui:Label name="play-prompt" text="tap or press space to flip" class="play-prompt" />
-
-        <ui:VisualElement class="start-bottom-bar" picking-mode="Ignore">
+        <ui:Label name="play-prompt" text="tap or press space to flip" class="play-prompt"/>
+        <ui:VisualElement picking-mode="Ignore" class="start-bottom-bar">
             <ui:Button name="btn-options" class="corner-btn">
-                <ui:Label text="OPTIONS" class="corner-btn-label" />
+                <ui:Label text="OPTIONS" class="corner-btn-label"/>
             </ui:Button>
             <ui:Button name="btn-leaderboard" class="corner-btn">
-                <ui:Label text="SCORES" class="corner-btn-label" />
+                <ui:Label text="SCORES" class="corner-btn-label"/>
             </ui:Button>
         </ui:VisualElement>
     </ui:VisualElement>
-
-    <!-- ═══════════ OPTIONS OVERLAY ═══════════ -->
-    <ui:VisualElement name="options-overlay" class="overlay hidden" picking-mode="Ignore">
+    <ui:VisualElement name="options-overlay" picking-mode="Ignore" class="overlay hidden">
         <ui:VisualElement class="overlay-panel">
-            <ui:Label text="OPTIONS" class="overlay-title" />
-
+            <ui:Label text="OPTIONS" class="overlay-title"/>
             <ui:VisualElement class="option-row">
-                <ui:Label text="MUSIC" class="option-label" />
-                <ui:Slider name="slider-music" low-value="0" high-value="100" value="80" class="option-slider" />
+                <ui:Label text="MUSIC" class="option-label"/>
+                <ui:Slider name="slider-music" low-value="0" high-value="100" value="80" class="option-slider"/>
             </ui:VisualElement>
-
             <ui:VisualElement class="option-row">
-                <ui:Label text="SFX" class="option-label" />
-                <ui:Slider name="slider-sfx" low-value="0" high-value="100" value="80" class="option-slider" />
+                <ui:Label text="SFX" class="option-label"/>
+                <ui:Slider name="slider-sfx" low-value="0" high-value="100" value="80" class="option-slider"/>
             </ui:VisualElement>
-
             <ui:VisualElement class="option-row">
-                <ui:Label text="NAME" class="option-label" />
-                <ui:TextField name="input-player-name" value="Player" max-length="12" class="option-textfield" />
+                <ui:Label text="NAME" class="option-label"/>
+                <ui:TextField name="input-player-name" value="Player" max-length="12" class="option-textfield"/>
             </ui:VisualElement>
-
             <ui:Button name="btn-options-close" class="overlay-close-btn">
-                <ui:Label text="BACK" class="overlay-close-label" />
+                <ui:Label text="BACK" class="overlay-close-label"/>
             </ui:Button>
         </ui:VisualElement>
     </ui:VisualElement>
-
-    <!-- ═══════════ LEADERBOARD OVERLAY ═══════════ -->
-    <ui:VisualElement name="leaderboard-overlay" class="overlay hidden" picking-mode="Ignore">
+    <ui:VisualElement name="leaderboard-overlay" picking-mode="Ignore" class="overlay hidden">
         <ui:VisualElement class="overlay-panel">
-            <ui:Label text="SCORES" class="overlay-title" />
-
-            <ui:VisualElement name="leaderboard-list" class="leaderboard-list" />
-
+            <ui:Label text="SCORES" class="overlay-title"/>
+            <ui:VisualElement name="leaderboard-list" class="leaderboard-list"/>
             <ui:Button name="btn-leaderboard-close" class="overlay-close-btn">
-                <ui:Label text="BACK" class="overlay-close-label" />
+                <ui:Label text="BACK" class="overlay-close-label"/>
             </ui:Button>
         </ui:VisualElement>
     </ui:VisualElement>
-
-    <!-- ═══════════ GAME OVER (bad landing) ═══════════ -->
-    <ui:VisualElement name="game-over-overlay" class="overlay overlay-game-over hidden" picking-mode="Ignore">
+    <ui:VisualElement name="game-over-overlay" picking-mode="Ignore" class="overlay overlay-game-over hidden">
         <ui:VisualElement class="game-over-card">
-            <ui:Label name="game-over-score" text="0" class="game-over-score" />
-            <ui:Label text="FLIPS" class="game-over-score-sub" />
-            <ui:VisualElement class="game-over-stat-row" picking-mode="Ignore">
-                <ui:Label name="game-over-height" text="0.0 m" class="game-over-height" />
+            <ui:Label name="game-over-score" text="0" class="game-over-score"/>
+            <ui:Label text="FLIPS" class="game-over-score-sub"/>
+            <ui:VisualElement picking-mode="Ignore" class="game-over-stat-row">
+                <ui:Label name="game-over-height" text="0.0 m" class="game-over-height"/>
             </ui:VisualElement>
-            <ui:VisualElement class="game-over-divider" picking-mode="Ignore" />
+            <ui:VisualElement picking-mode="Ignore" class="game-over-divider"/>
             <ui:Button name="btn-game-over-restart" class="game-over-restart-btn">
-                <ui:Label text="TRY AGAIN" class="game-over-restart-label" />
+                <ui:Label text="TRY AGAIN" class="game-over-restart-label"/>
             </ui:Button>
         </ui:VisualElement>
     </ui:VisualElement>
-
-    <!-- ═══════════ IN-GAME HUD ═══════════ -->
-    <ui:VisualElement name="game-hud" class="game-hud hidden" picking-mode="Ignore">
-
-        <ui:VisualElement name="altitude-hud-wrap" class="altitude-hud-wrap" picking-mode="Ignore">
-            <ui:Label name="altitude-label" text="" class="altitude-label" />
+    <ui:VisualElement name="game-hud" picking-mode="Ignore" class="game-hud hidden">
+        <ui:VisualElement name="altitude-hud-wrap" picking-mode="Ignore" class="altitude-hud-wrap">
+            <ui:Label name="altitude-label" text="" class="altitude-label"/>
         </ui:VisualElement>
-
-        <ui:VisualElement name="score-wrap" class="score-wrap" picking-mode="Ignore">
-            <ui:Label name="score-label" text="0" class="score-label" />
-            <ui:Label text="FLIPS" class="score-sub-label" />
+        <ui:VisualElement name="score-wrap" picking-mode="Ignore" class="score-wrap">
+            <ui:Label name="score-label" text="0" class="score-label"/>
+            <ui:Label text="FLIPS" class="score-sub-label"/>
         </ui:VisualElement>
-
-        <ui:VisualElement name="live-flip-wrap" class="live-flip-wrap" picking-mode="Ignore">
-            <ui:VisualElement class="live-flip-bar">
-                <ui:Label name="live-flip-label" text="x0" class="live-flip-label" />
+        <ui:VisualElement name="live-flip-wrap" picking-mode="Ignore" class="live-flip-wrap">
+            <ui:VisualElement name="VisualElement" class="live-flip-bar">
+                <ui:Label name="live-flip-label" text="x0" class="live-flip-label"/>
                 <ui:VisualElement name="live-flip-meter" class="live-flip-meter">
-                    <ui:VisualElement name="live-flip-meter-fill" class="live-flip-meter-fill" />
+                    <ui:VisualElement name="live-flip-meter-fill" class="live-flip-meter-fill"/>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-
-        <ui:VisualElement name="combo-root" class="combo-root" picking-mode="Ignore" />
-
-        <ui:VisualElement name="minimap-chrome" class="minimap-chrome" picking-mode="Ignore" />
+        <ui:VisualElement name="combo-root" picking-mode="Ignore" class="combo-root"/>
+        <ui:VisualElement name="minimap-chrome" picking-mode="Ignore" class="minimap-chrome"/>
     </ui:VisualElement>
 </ui:UXML>
