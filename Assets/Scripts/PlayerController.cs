@@ -5,303 +5,274 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [Header("Flip")]
-    [Tooltip("Spin when you first press (deg/s). Positive = front flip (Unity 2D CCW).")]
-    public float flipDegreesPerSecondStart = 320f;
-
-    [Tooltip("Spin after holding flipRampSecondsToMax (deg/s). Positive = front flip.")]
-    public float flipDegreesPerSecondMax = 600f;
-
-    [Tooltip("Seconds of hold to ramp from start spin to max spin.")]
-    public float flipRampSecondsToMax = 1.4f;
-
-    [Tooltip("Angular damping when not holding flip (settles rotation after collisions).")]
-    public float idleAngularDamping = 6f;
-
-    [Tooltip("On release, fraction of current ramped spin becomes angular velocity (coast).")]
+    public float flipSpeedStart = 360f;
+    public float flipSpeedMax = 600f;
+    public float flipRampSeconds = 1.4f;
     [Range(0f, 1f)]
     public float releaseAngularMomentumFactor = 0.85f;
 
-    [Header("Bounce vs spin")]
-    [Tooltip("Airborne rotation (degrees) needed to count as one full spin for bounce bonus.")]
-    public float degreesPerSuccessfulSpin = 360f;
+    [Header("Altitude Spin Boost")]
+    public float spinBoostStartHeight = 8f;
+    public float spinBoostPerUnit = 25f;
 
-    [Tooltip("Bounce multiplier per spin after a clean landing: base × (1 + spins × this). E.g. 0.04 = +4% bounce per spin.")]
-    public float bounceBonusPerSuccessfulSpin = 0.1f;
-
-    [Tooltip("Maximum spins that add bounce bonus (avoids huge impulses).")]
-    public int maxSpinsForBounceBonus = 20;
-
-    [Header("Movement")]
-    [Tooltip("Locks horizontal drift while bouncing (recommended for vertical trampoline gameplay). Disabled when you fall off.")]
-    public bool freezeHorizontalPosition = true;
+    [Header("Bounce")]
+    public float bounceBonusPerFlip = 0.18f;
+    public int maxFlipsForBonus = 20;
 
     [Header("Landing")]
-    [Tooltip("Maximum degrees from upright allowed to count as a clean landing.")]
     [Range(0f, 90f)]
-    public float maxUprightAngleDeg = 25f;
+    public float maxLandingAngle = 25f;
+    [Range(0f, 15f)]
+    public float perfectLandingAngle = 5f;
+
+    [Header("Apex Hang")]
+    public float apexSpeedThreshold = 2.5f;
+    [Range(0f, 1f)]
+    public float apexGravityScale = 0.18f;
+    public float apexHeightScaleMax = 3f;
+    public float apexHeightForFullScale = 40f;
+
+    [Header("Fall Speed")]
+    public float maxFallSpeed = 30f;
+
+    [Header("Movement")]
+    public bool freezeHorizontalPosition = true;
 
     [Header("Touch")]
-    [Tooltip("Only accept touch/press if it's within this center-screen box (normalized viewport coords).")]
-    public Rect centerTouchViewportRect = new Rect(0.25f, 0.25f, 0.5f, 0.5f);
+    public Rect centerTouchRect = new Rect(0.25f, 0.25f, 0.5f, 0.5f);
 
-    [Header("Realtime flip combo ( HUD + idle timeout )")]
-    [Tooltip("If you stop rotating noticeably for this long while airborne, the flip session resets to 0 (HUD + bounce math).")]
-    public float flipSessionIdleSeconds = 1.05f;
+    [Header("Altitude Events")]
+    [SerializeField] Collider2D playSurfaceCollider;
 
-    [Tooltip("Per physics frame: rotation below this (degrees) does not refresh the idle timer.")]
-    public float flipSessionMinDegreesForActivityPerFixed = 1.75f;
+    Rigidbody2D _rb;
+    float _defaultGravity;
+    InputAction _flipAction;
 
-    private Rigidbody2D _rb;
-    private bool _flipHeld;
-    private bool _touchAccepted;
-    private bool _fallen;
+    bool _flipHeld, _touchAccepted, _fallen, _onTrampoline, _pastApex;
+    float _flipHoldTime, _lastFlipSpeed;
+    float _prevRotation, _airSpinDegrees;
+    float _baselineY, _peakY;
+    bool _highAltActive;
+    int _lifetimeFlips;
 
-    private float _flipHoldElapsed;
-    private float _lastHoldDegreesPerSecond;
-
-    private bool _onTrampoline;
-    private float _prevRotationForAirSpin;
-    private float _airborneRotationDegrees;
-
-    public int LastLandingSuccessfulSpins { get; private set; }
+    public int LastLandingFlips { get; private set; }
     public bool IsOnTrampoline => _onTrampoline;
 
-    private InputAction _flipAction;
-
-    private float _jumpBaselineWorldY;
-    private float _jumpPeakWorldY;
-    private bool _highAltitudeMusicBandActive;
-    private int _lifetimeFlipsCounted;
-
-    private float _lastFlipActivityFixedTime;
-    private bool _idleFlipResetThisFixedStep;
-
-    private void Awake()
+    void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
+        _defaultGravity = _rb.gravityScale;
 
         if (freezeHorizontalPosition)
             _rb.constraints |= RigidbodyConstraints2D.FreezePositionX;
 
-        _prevRotationForAirSpin = _rb.rotation;
-        _flipAction = new InputAction(
-            name: "FlipHold",
-            type: InputActionType.Button,
-            binding: "<Keyboard>/space");
+        _prevRotation = _rb.rotation;
+        _baselineY = _peakY = transform.position.y;
 
+        _flipAction = new InputAction("Flip", InputActionType.Button, "<Keyboard>/space");
         _flipAction.AddBinding("<Keyboard>/enter");
         _flipAction.AddBinding("<Pointer>/press");
-
-        float startY = transform.position.y;
-        _jumpBaselineWorldY = startY;
-        _jumpPeakWorldY = startY;
-        _lastFlipActivityFixedTime = Time.fixedTime;
     }
-    private void OnEnable()
+
+    void OnEnable()
     {
-        _flipAction.started += OnFlipStarted;
-        _flipAction.canceled += OnFlipCanceled;
+        _flipAction.started += OnFlipDown;
+        _flipAction.canceled += OnFlipUp;
         _flipAction.Enable();
     }
 
-    private void OnDisable()
+    void OnDisable()
     {
-        _flipAction.started -= OnFlipStarted;
-        _flipAction.canceled -= OnFlipCanceled;
+        _flipAction.started -= OnFlipDown;
+        _flipAction.canceled -= OnFlipUp;
         _flipAction.Disable();
     }
 
-    private void FixedUpdate()
+    void FixedUpdate()
     {
+        PublishAltitude();
         if (_fallen) return;
+
         if (_flipHeld)
         {
-            _flipHoldElapsed += Time.fixedDeltaTime;
-            float rampT = flipRampSecondsToMax > 0f
-                ? Mathf.Clamp01(_flipHoldElapsed / flipRampSecondsToMax)
-                : 1f;
-            rampT = rampT * rampT * (3f - 2f * rampT); // smoothstep
-            _lastHoldDegreesPerSecond = Mathf.Lerp(flipDegreesPerSecondStart, flipDegreesPerSecondMax, rampT);
+            _flipHoldTime += Time.fixedDeltaTime;
+            float t = flipRampSeconds > 0f ? Mathf.Clamp01(_flipHoldTime / flipRampSeconds) : 1f;
+            t = t * t * (3f - 2f * t);
 
-            float deltaDeg = _lastHoldDegreesPerSecond * Time.fixedDeltaTime;
-            _rb.MoveRotation(_rb.rotation + deltaDeg);
+            float height = Mathf.Max(0f, transform.position.y - _baselineY);
+            float boost = height > spinBoostStartHeight
+                ? (height - spinBoostStartHeight) * spinBoostPerUnit
+                : 0f;
+
+            _lastFlipSpeed = Mathf.Lerp(flipSpeedStart, flipSpeedMax + boost, t);
+            _rb.MoveRotation(_rb.rotation + _lastFlipSpeed * Time.fixedDeltaTime);
             _rb.angularVelocity = 0f;
         }
-        else
-        {
-            _rb.angularDamping = idleAngularDamping;
-        }
+
         if (!_onTrampoline)
         {
-            float frameSpin = Mathf.Abs(Mathf.DeltaAngle(_prevRotationForAirSpin, _rb.rotation));
-            _airborneRotationDegrees += frameSpin;
+            _airSpinDegrees += Mathf.Abs(Mathf.DeltaAngle(_prevRotation, _rb.rotation));
+            if (transform.position.y > _peakY) _peakY = transform.position.y;
 
-            if (frameSpin >= flipSessionMinDegreesForActivityPerFixed)
-                _lastFlipActivityFixedTime = Time.fixedTime;
+            if (!_pastApex && _rb.linearVelocity.y < 0f)
+            {
+                _pastApex = true;
+                GameplayEventBus.RaiseApexReached();
+            }
 
-            EvaluateFlipSessionIdle(frameSpin);
-
-            float y = transform.position.y;
-            if (y > _jumpPeakWorldY)
-                _jumpPeakWorldY = y;
-
-            UpdateHighAltitudeMusicBand();
+            UpdateHighAltitude();
         }
 
-        _prevRotationForAirSpin = _rb.rotation;
+        ApplyApexHang();
+
+        if (_rb.linearVelocity.y < -maxFallSpeed)
+            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, -maxFallSpeed);
+
+        _prevRotation = _rb.rotation;
     }
 
-    private void EvaluateFlipSessionIdle(float frameSpinDegrees)
-    {
-        if (!_onTrampoline && !_fallen && _airborneRotationDegrees > 0.01f
-            && Time.fixedTime - _lastFlipActivityFixedTime > flipSessionIdleSeconds)
-        {
-            ResetAirFlipSessionBecauseIdle(frameSpinDegrees);
-        }
-    }
-
-    private void ResetAirFlipSessionBecauseIdle(float frameSpinIgnored)
-    {
-        _idleFlipResetThisFixedStep = true;
-
-        _airborneRotationDegrees = 0f;
-        _prevRotationForAirSpin = _rb.rotation;
-        _lastFlipActivityFixedTime = Time.fixedTime;
-    }
-
-    private void LateUpdate()
-    {
-        EmitAirborneFlipProgress();
-    }
-
-    private void EmitAirborneFlipProgress()
+    void LateUpdate()
     {
         bool airborne = !_onTrampoline && !_fallen;
-
-        float div = Mathf.Max(1f, degreesPerSuccessfulSpin);
-        float deg = _airborneRotationDegrees;
-
-        int visibleFlips = Mathf.FloorToInt(deg / div);
-        float remainder = Mathf.Repeat(deg, div);
-        float progress = remainder / div;
-
-        bool idleResetNow = _idleFlipResetThisFixedStep;
-        _idleFlipResetThisFixedStep = false;
+        int flips = airborne ? Mathf.FloorToInt(_airSpinDegrees / 360f) : 0;
+        float progress = airborne ? Mathf.Repeat(_airSpinDegrees, 360f) / 360f : 0f;
 
         GameplayEventBus.RaiseAirborneFlipProgress(new AirborneFlipProgressInfo
         {
             IsAirborne = airborne,
-            VisibleFullFlipCount = airborne ? visibleFlips : 0,
-            ProgressTowardNextFlip = airborne ? Mathf.Clamp01(progress) : 0f,
-            SessionRotationDegrees = airborne ? deg : 0f,
-            IdleResetThisFrame = idleResetNow,
-            DegreesPerFullFlipForUi = div,
+            VisibleFullFlipCount = flips,
+            ProgressTowardNextFlip = Mathf.Clamp01(progress),
         });
-
     }
 
-    private void UpdateHighAltitudeMusicBand()
+    void ApplyApexHang()
     {
-        if (_fallen)
+        if (_onTrampoline || _fallen)
         {
-            ClearHighAltitudeMusicBandIfNeeded();
+            _rb.gravityScale = _defaultGravity;
             return;
         }
 
-        float th = GameplayEventBus.HighAltitudeThresholdWorldY;
-        bool nowHigh = transform.position.y >= th;
-        if (nowHigh == _highAltitudeMusicBandActive)
-            return;
+        float absVy = Mathf.Abs(_rb.linearVelocity.y);
+        if (absVy < apexSpeedThreshold)
+        {
+            float heightFactor = apexHeightForFullScale > 0f
+                ? Mathf.Clamp01((_peakY - _baselineY) / apexHeightForFullScale)
+                : 0f;
+            float scaledThreshold = apexSpeedThreshold * Mathf.Lerp(1f, apexHeightScaleMax, heightFactor);
 
-        _highAltitudeMusicBandActive = nowHigh;
-        if (nowHigh)
-            GameplayEventBus.RaiseEnteredHighAir();
+            float t = 1f - absVy / scaledThreshold;
+            _rb.gravityScale = Mathf.Lerp(_defaultGravity, _defaultGravity * apexGravityScale, Mathf.Clamp01(t));
+        }
         else
-            GameplayEventBus.RaiseExitedHighAir();
+        {
+            _rb.gravityScale = _defaultGravity;
+        }
     }
 
-    private void ClearHighAltitudeMusicBandIfNeeded()
+    void PublishAltitude()
     {
-        if (!_highAltitudeMusicBandActive)
+        if (_fallen || playSurfaceCollider == null)
+        {
+            GameplayEventBus.SetHeightAbovePlaySurface(0f);
             return;
+        }
+        GameplayEventBus.SetHeightAbovePlaySurface(
+            transform.position.y - playSurfaceCollider.bounds.max.y);
+    }
 
-        _highAltitudeMusicBandActive = false;
+    void UpdateHighAltitude()
+    {
+        if (_fallen) { ClearHighAlt(); return; }
+        bool high = transform.position.y >= GameplayEventBus.HighAltitudeThresholdWorldY;
+        if (high == _highAltActive) return;
+        _highAltActive = high;
+        if (high) GameplayEventBus.RaiseEnteredHighAir();
+        else GameplayEventBus.RaiseExitedHighAir();
+    }
+
+    void ClearHighAlt()
+    {
+        if (!_highAltActive) return;
+        _highAltActive = false;
         GameplayEventBus.RaiseExitedHighAir();
     }
 
-    private void OnFlipStarted(InputAction.CallbackContext ctx)
+    void OnFlipDown(InputAction.CallbackContext ctx)
     {
-        if (_fallen) return;
+        if (_fallen || CrazyPanDogUIController.InputBlocked) return;
+
         if (ctx.control?.device is Pointer)
         {
             var pos = Pointer.current?.position.ReadValue() ?? Vector2.zero;
-            if (!IsInCenterRect(pos))
-            {
-                _touchAccepted = false;
-                return;
-            }
-
+            if (!IsInCenterRect(pos)) { _touchAccepted = false; return; }
             _touchAccepted = true;
         }
 
         _flipHeld = true;
-        _flipHoldElapsed = 0f;
-        _lastHoldDegreesPerSecond = flipDegreesPerSecondStart;
+        _flipHoldTime = 0f;
+        GameplayEventBus.RaiseFlipHoldStarted();
     }
 
-    private void OnFlipCanceled(InputAction.CallbackContext ctx)
+    void OnFlipUp(InputAction.CallbackContext ctx)
     {
-        if (ctx.control?.device is Pointer && !_touchAccepted)
-            return;
-
+        if (ctx.control?.device is Pointer && !_touchAccepted) return;
         bool wasFlipping = _flipHeld && !_fallen;
         _flipHeld = false;
         _touchAccepted = false;
-
         if (wasFlipping && releaseAngularMomentumFactor > 0f)
-        {
-            float omegaRad = _lastHoldDegreesPerSecond * Mathf.Deg2Rad * releaseAngularMomentumFactor;
-            _rb.angularVelocity = omegaRad;
-        }
+            _rb.angularVelocity = _lastFlipSpeed * Mathf.Deg2Rad * releaseAngularMomentumFactor;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    void OnCollisionEnter2D(Collision2D col)
     {
-        if (_fallen) return;
-        if (collision.collider.GetComponent<bounce>() == null)
-            return;
-
+        if (_fallen || col.collider.GetComponent<bounce>() == null) return;
         _onTrampoline = true;
-        ClearHighAltitudeMusicBandIfNeeded();
+        ClearHighAlt();
     }
 
-    private void OnCollisionExit2D(Collision2D collision)
+    void OnCollisionExit2D(Collision2D col)
     {
-        if (collision.collider.GetComponent<bounce>() == null)
-            return;
-
+        if (col.collider.GetComponent<bounce>() == null) return;
         _onTrampoline = false;
-        _jumpBaselineWorldY = transform.position.y;
-        _jumpPeakWorldY = transform.position.y;
-        _lastFlipActivityFixedTime = Time.fixedTime;
+        _pastApex = false;
+        _baselineY = _peakY = transform.position.y;
     }
 
-    private bool IsInCenterRect(Vector2 screenPos)
+    bool IsInCenterRect(Vector2 screenPos)
     {
         var cam = Camera.main;
-        if (!cam) return true; 
+        return !cam || centerTouchRect.Contains(cam.ScreenToViewportPoint(screenPos));
+    }
 
-        Vector2 vp = cam.ScreenToViewportPoint(screenPos);
-        return centerTouchViewportRect.Contains(vp);
+    float AngleFromUpright()
+    {
+        float z = transform.eulerAngles.z;
+        return z > 180f ? z - 360f : z;
     }
 
     public void HandleTrampolineBounce(float bounceForce)
     {
         if (_fallen) return;
 
-        TrampolineLandingInfo landing = BuildLandingSnapshot();
+        int flips = Mathf.FloorToInt(_airSpinDegrees / 360f);
+        float angle = AngleFromUpright();
+        float absAngle = Mathf.Abs(angle);
+        bool clean = absAngle <= maxLandingAngle;
+        bool perfect = absAngle <= perfectLandingAngle;
 
-        if (!IsUprightEnough())
+        var landing = new TrampolineLandingInfo
+        {
+            JumpHeight = Mathf.Max(0f, _peakY - _baselineY),
+            CompletedFullFlips = flips,
+            LandingAngleDegreesFromUpright = angle,
+            WasCleanLanding = clean,
+            WasPerfectLanding = perfect,
+            WorldPosition = transform.position,
+            PeakWorldY = _peakY,
+        };
+
+        if (!clean)
         {
             GameplayEventBus.RaiseTrampolineLanding(landing);
             GameplayEventBus.RaiseFallenOffSurface();
@@ -309,60 +280,28 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        int spins = landing.CompletedFullFlips;
-        LastLandingSuccessfulSpins = spins;
-        float bounceMul = 1f + spins * bounceBonusPerSuccessfulSpin;
-        _airborneRotationDegrees = 0f;
+        int capped = Mathf.Min(flips, maxFlipsForBonus);
+        float multiplier = 1f + capped * bounceBonusPerFlip;
+
+        LastLandingFlips = flips;
+        _airSpinDegrees = 0f;
+        _lifetimeFlips += flips;
 
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
-        _rb.AddForce(Vector2.up * (bounceForce * bounceMul), ForceMode2D.Impulse);
+        _rb.AddForce(Vector2.up * bounceForce * multiplier, ForceMode2D.Impulse);
 
-        _lifetimeFlipsCounted += spins;
-        GameplayEventBus.RaiseTotalLifetimeFlips(_lifetimeFlipsCounted);
-
+        GameplayEventBus.RaiseTotalLifetimeFlips(_lifetimeFlips);
         GameplayEventBus.RaiseTrampolineLanding(landing);
+        if (perfect) GameplayEventBus.RaisePerfectLanding();
     }
 
-    private TrampolineLandingInfo BuildLandingSnapshot()
-    {
-        float spinDeg = _airborneRotationDegrees;
-        int spins = Mathf.FloorToInt(spinDeg / Mathf.Max(1f, degreesPerSuccessfulSpin));
-        spins = Mathf.Clamp(spins, 0, Mathf.Max(0, maxSpinsForBounceBonus));
-
-        float height = Mathf.Max(0f, _jumpPeakWorldY - _jumpBaselineWorldY);
-
-        return new TrampolineLandingInfo
-        {
-            JumpHeight = height,
-            CompletedFullFlips = spins,
-            LandingAngleDegreesFromUpright = GetLandingAngleDegreesFromUpright(),
-            WasCleanLanding = IsUprightEnough(),
-            WorldPosition = transform.position,
-            PeakWorldY = _jumpPeakWorldY,
-            BaselineWorldY = _jumpBaselineWorldY,
-            AccumulatedSpinDegreesForJump = spinDeg
-        };
-    }
-
-    private float GetLandingAngleDegreesFromUpright()
-    {
-        float z = transform.eulerAngles.z;
-        if (z > 180f) z -= 360f;
-        return z;
-    }
-
-    private bool IsUprightEnough()
-    {
-        return Mathf.Abs(GetLandingAngleDegreesFromUpright()) <= maxUprightAngleDeg;
-    }
-
-    private void FallOff()
+    void FallOff()
     {
         _fallen = true;
         _flipHeld = false;
         _touchAccepted = false;
-        _airborneRotationDegrees = 0f;
-        ClearHighAltitudeMusicBandIfNeeded();
+        _airSpinDegrees = 0f;
+        ClearHighAlt();
 
         if (freezeHorizontalPosition)
             _rb.constraints &= ~RigidbodyConstraints2D.FreezePositionX;
