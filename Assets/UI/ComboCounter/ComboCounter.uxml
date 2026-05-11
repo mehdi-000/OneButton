@@ -1,0 +1,6 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/ComboCounter/ComboCounter.uss?fileID=7433441132597879392&amp;guid=8967e53ecbae533b5a65e013dbcee8d4&amp;type=3#ComboCounter"/>
+    <ui:VisualElement style="flex-grow: 1; align-items: center; justify-content: center; font-size: 14px;">
+        <ui:Label text="00" style="align-items: center; -unity-text-align: middle-center; text-overflow: clip; bottom: 0; top: 0; width: 100%; font-size: 90px; -unity-text-auto-size: none; -unity-text-generator: standard; color: rgb(255, 255, 255);"/>
+    </ui:VisualElement>
+</ui:UXML>
