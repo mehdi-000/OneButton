@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════
-   CRAZY PAN DOG – MOBILE-FIRST UI
+   CRAZY PAN DOG – RESPONSIVE UI
+   Reference: 1080 × 1920, width-based scaling
    ═══════════════════════════════════════════════ */
 
 .hidden {
@@ -15,17 +16,20 @@
     bottom: 0;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    padding-left: 5%;
-    padding-right: 5%;
-    padding-top: 8%;
+    justify-content: center;
+    padding-left: 6%;
+    padding-right: 6%;
+    padding-top: 4%;
+    padding-bottom: 4%;
+    overflow: hidden;
 }
 
-/* title – stacked 3 lines like the reference art */
 .title-wrap {
     flex-direction: column;
     align-items: center;
-    margin-bottom: 8%;
+    flex-shrink: 0;
+    margin-bottom: 4%;
+    overflow: visible;
 }
 
 .title-label {
@@ -35,23 +39,23 @@
 }
 
 .title-line-1 {
-    font-size: 72px;
+    font-size: 58px;
     color: rgb(210, 100, 40);
     text-shadow: 3px 4px 0 rgb(80, 30, 5);
     rotate: -6deg;
-    margin-bottom: -8px;
+    margin-bottom: -6px;
 }
 
 .title-line-2 {
-    font-size: 80px;
+    font-size: 66px;
     color: rgb(90, 60, 160);
     text-shadow: 3px 5px 0 rgb(30, 15, 70);
     rotate: 3deg;
-    margin-bottom: -8px;
+    margin-bottom: -6px;
 }
 
 .title-line-3 {
-    font-size: 88px;
+    font-size: 72px;
     color: rgb(80, 160, 60);
     text-shadow: 3px 5px 0 rgb(25, 60, 15);
     rotate: -4deg;
@@ -59,13 +63,15 @@
 
 /* play prompt */
 .play-prompt {
-    margin-top: 8%;
-    font-size: 26px;
+    margin-top: 5%;
+    font-size: 20px;
     -unity-font-style: bold;
     color: rgba(255, 255, 255, 0.85);
     -unity-text-align: middle-center;
     text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
     letter-spacing: 2px;
+    white-space: normal;
+    flex-shrink: 0;
 }
 
 .play-prompt.pulse-dim {
@@ -80,9 +86,9 @@
     bottom: 0;
     flex-direction: row;
     justify-content: space-between;
-    padding-left: 4%;
-    padding-right: 4%;
-    padding-bottom: 4%;
+    padding-left: 5%;
+    padding-right: 5%;
+    padding-bottom: 5%;
 }
 
 .corner-btn {
@@ -90,7 +96,7 @@
     border-width: 2px;
     border-color: rgba(255, 255, 255, 0.2);
     border-radius: 14px;
-    padding: 10px 20px;
+    padding: 8px 16px;
     transition-property: background-color, border-color, scale;
     transition-duration: 0.12s;
 }
@@ -107,7 +113,7 @@
 }
 
 .corner-btn-label {
-    font-size: 20px;
+    font-size: 16px;
     -unity-font-style: bold;
     color: rgba(255, 255, 255, 0.9);
     letter-spacing: 2px;
@@ -129,28 +135,28 @@
 
 .overlay-panel {
     width: 88%;
-    max-width: 380px;
+    max-width: 420px;
     background-color: rgba(20, 15, 35, 0.96);
     border-width: 2px;
     border-color: rgba(255, 200, 60, 0.35);
     border-radius: 20px;
-    padding: 24px 20px 20px 20px;
+    padding: 22px 18px 18px 18px;
     flex-direction: column;
     align-items: center;
 }
 
 .overlay-title {
-    font-size: 32px;
+    font-size: 28px;
     -unity-font-style: bold;
     color: rgb(255, 200, 60);
     -unity-text-align: middle-center;
     letter-spacing: 4px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     text-shadow: 2px 3px 0 rgb(40, 20, 0);
 }
 
 .overlay-close-btn {
-    margin-top: 18px;
+    margin-top: 16px;
     background-color: rgba(255, 165, 0, 0.22);
     border-width: 2px;
     border-color: rgba(255, 200, 60, 0.45);
@@ -171,7 +177,7 @@
 }
 
 .overlay-close-label {
-    font-size: 18px;
+    font-size: 16px;
     -unity-font-style: bold;
     color: rgb(255, 255, 255);
     letter-spacing: 3px;
@@ -183,11 +189,11 @@
     flex-direction: row;
     align-items: center;
     width: 100%;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .option-label {
-    font-size: 22px;
+    font-size: 18px;
     -unity-font-style: bold;
     color: rgb(220, 220, 230);
     width: 28%;
@@ -200,9 +206,9 @@
 }
 
 .option-slider .unity-base-slider__dragger {
-    width: 32px;
-    height: 32px;
-    border-radius: 16px;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
     background-color: rgb(255, 200, 60);
     border-width: 2px;
     border-color: rgb(200, 140, 20);
@@ -220,7 +226,7 @@
     border-radius: 10px;
     padding: 6px 10px;
     color: rgb(240, 240, 250);
-    font-size: 18px;
+    font-size: 16px;
     -unity-font-style: bold;
 }
 
@@ -251,16 +257,16 @@
 }
 
 .leaderboard-rank {
-    font-size: 17px;
+    font-size: 15px;
     -unity-font-style: bold;
     color: rgba(255, 200, 60, 0.85);
-    width: 36px;
-    min-width: 36px;
+    width: 32px;
+    min-width: 32px;
     -unity-text-align: middle-left;
 }
 
 .leaderboard-name {
-    font-size: 16px;
+    font-size: 14px;
     color: rgba(220, 225, 240, 0.85);
     flex-grow: 1;
     -unity-text-align: middle-left;
@@ -269,11 +275,11 @@
 }
 
 .leaderboard-score {
-    font-size: 17px;
+    font-size: 15px;
     -unity-font-style: bold;
     color: rgb(255, 200, 60);
     -unity-text-align: middle-right;
-    min-width: 40px;
+    min-width: 36px;
 }
 
 /* ═══════════ GAME OVER ═══════════ */
@@ -284,17 +290,17 @@
 .game-over-card {
     flex-direction: column;
     align-items: center;
-    padding: 10% 12%;
+    padding: 8% 10%;
     background-color: rgba(18, 10, 32, 0.95);
     border-width: 3px;
     border-color: rgba(255, 200, 60, 0.5);
     border-radius: 28px;
-    max-width: 360px;
-    width: 72%;
+    max-width: 380px;
+    width: 78%;
 }
 
 .game-over-score {
-    font-size: 72px;
+    font-size: 60px;
     -unity-font-style: bold;
     color: rgb(255, 220, 60);
     -unity-text-align: middle-center;
@@ -304,23 +310,23 @@
 }
 
 .game-over-score-sub {
-    font-size: 18px;
+    font-size: 16px;
     -unity-font-style: bold;
     color: rgba(255, 220, 60, 0.6);
     letter-spacing: 6px;
     -unity-text-align: middle-center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .game-over-stat-row {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
 
 .game-over-height {
-    font-size: 28px;
+    font-size: 24px;
     -unity-font-style: bold;
     color: rgb(180, 220, 255);
     -unity-text-align: middle-center;
@@ -333,7 +339,7 @@
     height: 2px;
     background-color: rgba(255, 200, 60, 0.22);
     border-radius: 1px;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
 }
 
 .game-over-restart-btn {
@@ -342,7 +348,7 @@
     border-width: 2px;
     border-color: rgba(255, 200, 60, 0.6);
     border-radius: 18px;
-    padding: 16px 10px;
+    padding: 14px 10px;
     transition-property: background-color, scale, border-color;
     transition-duration: 0.12s;
 }
@@ -359,7 +365,7 @@
 }
 
 .game-over-restart-label {
-    font-size: 24px;
+    font-size: 20px;
     -unity-font-style: bold;
     color: rgb(255, 255, 255);
     letter-spacing: 4px;
@@ -385,7 +391,7 @@
 }
 
 .score-label {
-    font-size: 44px;
+    font-size: 38px;
     -unity-font-style: bold;
     color: rgb(255, 220, 60);
     -unity-text-align: upper-right;
@@ -393,7 +399,7 @@
 }
 
 .score-sub-label {
-    font-size: 16px;
+    font-size: 14px;
     -unity-font-style: bold;
     color: rgba(255, 220, 60, 0.55);
     letter-spacing: 4px;
@@ -410,24 +416,45 @@
 }
 
 .altitude-label {
-    font-size: 32px;
+    font-size: 26px;
     -unity-font-style: bold;
     color: rgb(210, 235, 255);
     -unity-text-align: upper-left;
     text-shadow: 2px 3px 0 rgb(15, 25, 55), 0 6px 16px rgb(40, 70, 140);
 }
 
-/* minimap */
 .minimap-chrome {
     position: absolute;
-    top: 8%;
-    right: 0;
-    width: 22%;
-    height: 18%;
+    top: 14%;
+    right: 3%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    flex-direction: row;
+    padding: 3px;
+    overflow: hidden;
     background-color: rgba(6, 10, 22, 0.55);
-    border-width: 3px;
+    border-width: 2px;
     border-color: rgba(130, 185, 255, 0.9);
-    border-radius: 0;
+    border-radius: 6px;
+    opacity: 0;
+    scale: 0.7 0.7;
+    translate: 0 -8px;
+    transition-property: opacity, scale, translate;
+    transition-duration: 0.3s, 0.35s, 0.3s;
+    transition-timing-function: ease-out, ease-out, ease-out;
+}
+
+.minimap-chrome.minimap-visible {
+    opacity: 1;
+    scale: 1 1;
+    translate: 0 0;
+}
+
+.minimap-close-view {
+    flex-grow: 1;
+    width: 100%;
+    min-height: 0;
 }
 
 /* combo root */
@@ -441,7 +468,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding-top: 18%;
+    padding-top: 16%;
 }
 
 /* live flip counter */
@@ -462,7 +489,7 @@
 }
 
 .live-flip-label {
-    font-size: 90px;
+    font-size: 72px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     color: rgb(255, 245, 180);
@@ -470,40 +497,40 @@
 }
 
 .live-flip-label.tier-live-zero {
-    font-size: 56px;
+    font-size: 46px;
     opacity: 0.45;
     color: rgb(180, 200, 220);
 }
 
 .live-flip-label.tier-low {
-    font-size: 80px;
+    font-size: 64px;
     color: rgb(120, 220, 255);
     text-shadow: 0 4px 0 rgb(10, 40, 60), 0 8px 22px rgb(60, 120, 200);
 }
 
 .live-flip-label.tier-mid {
-    font-size: 90px;
+    font-size: 72px;
     color: rgb(255, 220, 90);
 }
 
 .live-flip-label.tier-high {
-    font-size: 100px;
+    font-size: 82px;
     color: rgb(255, 90, 200);
     text-shadow: 0 6px 0 rgb(70, 0, 70), 0 12px 36px rgb(255, 100, 255);
 }
 
 .live-flip-meter {
-    margin-top: 10px;
-    width: 60%;
-    height: 10px;
-    border-radius: 5px;
+    margin-top: 8px;
+    width: 55%;
+    height: 8px;
+    border-radius: 4px;
     background-color: rgba(20, 15, 40, 0.6);
 }
 
 .live-flip-meter-fill {
     width: 0%;
     height: 100%;
-    border-radius: 5px;
+    border-radius: 4px;
     background-color: rgb(255, 110, 200);
 }
 
@@ -514,7 +541,7 @@
 /* combo popup */
 .combo-popup-label {
     position: relative;
-    font-size: 76px;
+    font-size: 62px;
     -unity-font-style: bold;
     color: rgb(255, 240, 120);
     -unity-text-align: middle-center;
@@ -523,17 +550,17 @@
 
 .combo-popup-label.tier-low {
     color: rgb(120, 220, 255);
-    font-size: 68px;
+    font-size: 56px;
     text-shadow: 0 4px 0 rgb(10, 40, 60), 0 8px 22px rgb(60, 120, 200);
 }
 
 .combo-popup-label.tier-mid {
     color: rgb(255, 220, 90);
-    font-size: 76px;
+    font-size: 62px;
 }
 
 .combo-popup-label.tier-high {
     color: rgb(255, 90, 200);
-    font-size: 88px;
+    font-size: 72px;
     text-shadow: 0 6px 0 rgb(70, 0, 70), 0 12px 32px rgb(255, 100, 255);
 }

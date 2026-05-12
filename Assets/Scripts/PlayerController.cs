@@ -6,18 +6,20 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Flip")]
     public float flipSpeedStart = 360f;
-    public float flipSpeedMax = 600f;
-    public float flipRampSeconds = 1.4f;
+    public float flipSpeedMax = 450f;
+    public float flipRampSeconds = 1.2f;
     [Range(0f, 1f)]
     public float releaseAngularMomentumFactor = 0.85f;
 
     [Header("Altitude Spin Boost")]
     public float spinBoostStartHeight = 8f;
     public float spinBoostPerUnit = 25f;
+    public float maxSpinBoost = 200f;
 
     [Header("Bounce")]
     public float bounceBonusPerFlip = 0.18f;
     public int maxFlipsForBonus = 20;
+    public float maxBounceSpeed = 38f;
 
     [Header("Landing")]
     [Range(0f, 90f)]
@@ -101,7 +103,7 @@ public class PlayerController : MonoBehaviour
 
             float height = Mathf.Max(0f, transform.position.y - _baselineY);
             float boost = height > spinBoostStartHeight
-                ? (height - spinBoostStartHeight) * spinBoostPerUnit
+                ? Mathf.Min((height - spinBoostStartHeight) * spinBoostPerUnit, maxSpinBoost)
                 : 0f;
 
             _lastFlipSpeed = Mathf.Lerp(flipSpeedStart, flipSpeedMax + boost, t);
@@ -134,8 +136,8 @@ public class PlayerController : MonoBehaviour
     void LateUpdate()
     {
         bool airborne = !_onTrampoline && !_fallen;
-        int flips = airborne ? Mathf.FloorToInt(_airSpinDegrees / 360f) : 0;
-        float progress = airborne ? Mathf.Repeat(_airSpinDegrees, 360f) / 360f : 0f;
+        int flips = airborne ? Mathf.FloorToInt(_airSpinDegrees / 330f) : 0;
+        float progress = airborne ? Mathf.Repeat(_airSpinDegrees, 330f) / 330f : 0f;
 
         GameplayEventBus.RaiseAirborneFlipProgress(new AirborneFlipProgressInfo
         {
@@ -289,6 +291,9 @@ public class PlayerController : MonoBehaviour
 
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
         _rb.AddForce(Vector2.up * bounceForce * multiplier, ForceMode2D.Impulse);
+
+        if (_rb.linearVelocity.y > maxBounceSpeed)
+            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, maxBounceSpeed);
 
         GameplayEventBus.RaiseTotalLifetimeFlips(_lifetimeFlips);
         GameplayEventBus.RaiseTrampolineLanding(landing);

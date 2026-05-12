@@ -22,10 +22,15 @@ public class CrazyPanDogUIController : MonoBehaviour
     [SerializeField] AudioSource musicSource;
     [SerializeField] AudioSource sfxSource;
 
+    [Header("Minimap")]
+    [SerializeField] RenderTexture closeViewTexture;
+    [SerializeField] float minimapCloseViewMinHeightMeters = 6f;
+
     UIDocument _ui;
 
     // start screen
     VisualElement _startScreen;
+    VisualElement _startBottomBar;
     Label _playPrompt;
     Button _btnOptions;
     Button _btnLeaderboard;
@@ -53,13 +58,17 @@ public class CrazyPanDogUIController : MonoBehaviour
     VisualElement _altitudeWrap;
     Label _altitudeLabel;
     Label _scoreLabel;
+    VisualElement _minimapChrome;
+    Image _minimapCloseView;
 
     int _lastLiveFlipFloor = -1;
     int _totalFlips;
     bool _gameStarted;
     bool _overlayOpen;
     bool _gameOverOpen;
+    bool _minimapVisible;
     Coroutine _promptBlink;
+    Rect _lastSafeArea;
 
 
     /// <summary>
@@ -104,6 +113,7 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void LateUpdate()
     {
+        ApplySafeArea();
         UpdateAltitude();
     }
 
@@ -122,6 +132,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (root == null) return;
 
         _startScreen = root.Q<VisualElement>("start-screen");
+        _startBottomBar = root.Q<VisualElement>(className: "start-bottom-bar");
         _playPrompt = root.Q<Label>("play-prompt");
         _btnOptions = root.Q<Button>("btn-options");
         _btnLeaderboard = root.Q<Button>("btn-leaderboard");
@@ -147,6 +158,11 @@ public class CrazyPanDogUIController : MonoBehaviour
         _altitudeWrap = root.Q<VisualElement>("altitude-hud-wrap");
         _altitudeLabel = root.Q<Label>("altitude-label");
         _scoreLabel = root.Q<Label>("score-label");
+
+        _minimapChrome = root.Q<VisualElement>("minimap-chrome");
+        _minimapCloseView = root.Q<Image>("minimap-close-view");
+        if (_minimapCloseView != null && closeViewTexture != null)
+            _minimapCloseView.image = closeViewTexture;
     }
 
     // ───────── start screen ─────────
@@ -246,6 +262,9 @@ public class CrazyPanDogUIController : MonoBehaviour
         RefreshAltitudeVisibility();
         if (_liveWrap != null) _liveWrap.AddToClassList("hidden");
         if (_scoreLabel != null) _scoreLabel.text = "0";
+
+        _minimapVisible = false;
+        if (_minimapChrome != null) _minimapChrome.RemoveFromClassList("minimap-visible");
     }
 
     // ───────── overlay input blocking ─────────
@@ -433,6 +452,47 @@ public class CrazyPanDogUIController : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    // ───────── safe area ─────────
+
+    void ApplySafeArea()
+    {
+        Rect safeArea = Screen.safeArea;
+        if (safeArea == _lastSafeArea) return;
+        _lastSafeArea = safeArea;
+
+        float sw = Screen.width;
+        float sh = Screen.height;
+        if (sw <= 0 || sh <= 0) return;
+
+        float topPct = (sh - safeArea.yMax) / sh * 100f;
+        float bottomPct = safeArea.y / sh * 100f;
+        float leftPct = safeArea.x / sw * 100f;
+        float rightPct = (sw - safeArea.xMax) / sw * 100f;
+
+        ApplySafeInsets(_startScreen, topPct, bottomPct, leftPct, rightPct);
+        ApplySafeInsets(_gameHud, topPct, bottomPct, leftPct, rightPct);
+        ApplySafeInsets(_optionsOverlay, topPct, bottomPct, leftPct, rightPct);
+        ApplySafeInsets(_leaderboardOverlay, topPct, bottomPct, leftPct, rightPct);
+        ApplySafeInsets(_gameOverOverlay, topPct, bottomPct, leftPct, rightPct);
+
+        if (_startBottomBar != null)
+        {
+            _startBottomBar.style.paddingBottom = new Length(bottomPct + 3f, LengthUnit.Percent);
+            _startBottomBar.style.paddingLeft = new Length(leftPct + 4f, LengthUnit.Percent);
+            _startBottomBar.style.paddingRight = new Length(rightPct + 4f, LengthUnit.Percent);
+        }
+    }
+
+    static void ApplySafeInsets(VisualElement el, float topPct, float bottomPct,
+        float leftPct, float rightPct)
+    {
+        if (el == null) return;
+        el.style.paddingTop = new Length(topPct + 3f, LengthUnit.Percent);
+        el.style.paddingLeft = new Length(leftPct + 3f, LengthUnit.Percent);
+        el.style.paddingRight = new Length(rightPct + 3f, LengthUnit.Percent);
+        el.style.paddingBottom = new Length(bottomPct + 2f, LengthUnit.Percent);
+    }
+
     // ───────── altitude ─────────
 
     void RefreshAltitudeVisibility()
@@ -445,12 +505,35 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void UpdateAltitude()
     {
-        if (_altitudeWrap == null || _altitudeLabel == null) return;
-        if (altitudePlayer == null || altitudeGroundCollider == null) return;
+        float heightAboveSurface;
+        if (altitudePlayer != null && altitudeGroundCollider != null)
+        {
+            float groundTop = altitudeGroundCollider.bounds.max.y;
+            heightAboveSurface = Mathf.Max(0f, altitudePlayer.position.y - groundTop);
+        }
+        else
+        {
+            // Same value PlayerController drives each physics frame (play surface collider).
+            heightAboveSurface = GameplayEventBus.HeightAbovePlaySurface;
+        }
 
-        float groundTop = altitudeGroundCollider.bounds.max.y;
-        float meters = Mathf.Max(0f, altitudePlayer.position.y - groundTop);
-        _altitudeLabel.text = $"{meters:F1} m";
+        if (_altitudeWrap != null && _altitudeLabel != null)
+            _altitudeLabel.text = $"{heightAboveSurface:F1} m";
+
+        if (_minimapChrome != null)
+        {
+            float hysteresis = _minimapVisible ? 9f : 0f;
+            bool showChrome = _gameStarted &&
+                              heightAboveSurface >= (minimapCloseViewMinHeightMeters - hysteresis);
+            if (showChrome != _minimapVisible)
+            {
+                _minimapVisible = showChrome;
+                if (showChrome)
+                    _minimapChrome.AddToClassList("minimap-visible");
+                else
+                    _minimapChrome.RemoveFromClassList("minimap-visible");
+            }
+        }
     }
 
     // ───────── gameplay HUD events ─────────
