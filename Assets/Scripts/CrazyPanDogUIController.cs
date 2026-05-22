@@ -583,7 +583,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         _liveWrap.RemoveFromClassList("hidden");
 
         int n = info.VisibleFullFlipCount;
-        _liveLabel.text = $"x{n}";
+        _liveLabel.text = n > 0 ? $"x{n}" : string.Empty;
 
         foreach (string c in new[] { "tier-live-zero", "tier-low", "tier-mid", "tier-high" })
             _liveLabel.RemoveFromClassList(c);

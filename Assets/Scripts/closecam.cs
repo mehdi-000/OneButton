@@ -1,34 +1,15 @@
-using Cinemachine;
 using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
-[RequireComponent(typeof(CinemachineBrain))]
 public class closecam : MonoBehaviour
 {
-    [SerializeField] CinemachineVirtualCamera closeCamVirtual;
+    [SerializeField] Transform followTarget;
+    [SerializeField] Vector3 offset = new Vector3(0f, 0f, -10f);
 
-    CinemachineBrain _brain;
-    int _overrideId = -1;
-
-    void Awake()
+    void LateUpdate()
     {
-        _brain = GetComponent<CinemachineBrain>();
-    }
-
-    void OnEnable()
-    {
-        if (closeCamVirtual == null || _brain == null)
-            return;
-
-        _overrideId = _brain.SetCameraOverride(-1, null, closeCamVirtual, 1f, -1f);
-    }
-
-    void OnDisable()
-    {
-        if (_brain != null && _overrideId >= 0)
-        {
-            _brain.ReleaseCameraOverride(_overrideId);
-            _overrideId = -1;
-        }
+        if (followTarget == null) return;
+        transform.position = followTarget.position + offset;
+        transform.rotation = Quaternion.identity;
     }
 }
