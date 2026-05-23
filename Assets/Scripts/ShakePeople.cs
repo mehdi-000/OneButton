@@ -6,8 +6,9 @@ using System;
 public class MoveCheeringPeople : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer people;
-    [SerializeField] public AnimationCurve curve;
-    [SerializeField] public float offset = 5f;
+    [SerializeField] public float strength = 1f;
+    [SerializeField] public int vibratio = 10;
+
     [SerializeField] public float duration = 1.0f;
     [SerializeField] public float trigger;
 
@@ -28,12 +29,10 @@ public class MoveCheeringPeople : MonoBehaviour
         if (info.CompletedFullFlips >= trigger)
         {
             people.enabled = true;
-            float pos = people.transform.position.x - offset;
-            people.transform.DOLocalMoveX(pos,duration)
+            transform.DOShakePosition(duration, strength, vibratio, 90, false, true)
             .OnComplete(() => {
                 people.enabled = false;
-            })
-            .SetEase(curve);
+            });
         }
         
     }

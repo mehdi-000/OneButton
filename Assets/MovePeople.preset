@@ -6,10 +6,10 @@ Preset:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: MoveCheeringPeople
+  m_Name: MovePeople
   m_TargetType:
     m_NativeTypeID: 114
-    m_ManagedTypePPtr: {fileID: 11500000, guid: a825d4ac4a2619440a27d32be874de06, type: 3}
+    m_ManagedTypePPtr: {fileID: 11500000, guid: e10d618f3527ac180a9d1a0dc962ff28, type: 3}
     m_ManagedTypeFallback: 
   m_Properties:
   - target: {fileID: 0}
@@ -25,8 +25,8 @@ Preset:
     value: '::'
     objectReference: {fileID: 0}
   - target: {fileID: 0}
-    propertyPath: people
-    value: 
+    propertyPath: duration
+    value: 1
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.size
@@ -42,11 +42,11 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[0].inSlope
-    value: 11.171125
+    value: 5
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[0].outSlope
-    value: 11.171125
+    value: 5
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[0].tangentMode
@@ -66,7 +66,7 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[1].time
-    value: 0.0895165
+    value: 0.2
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[1].value
@@ -94,15 +94,15 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[1].outWeight
-    value: 0.036476742
+    value: 0.33333334
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[2].time
-    value: 0.881177
+    value: 0.6266115
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[2].value
-    value: 1.0076087
+    value: 1
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[2].inSlope
@@ -138,15 +138,15 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[3].inSlope
-    value: -19.983294
+    value: -2.6781754
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[3].outSlope
-    value: -19.983294
+    value: -2.6781754
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[3].tangentMode
-    value: 0
+    value: 34
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[3].weightedMode
@@ -154,7 +154,7 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[3].inWeight
-    value: 0.05568043
+    value: 0.33333334
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: curve.m_Curve.Array.data[3].outWeight
@@ -177,12 +177,8 @@ Preset:
     value: 7
     objectReference: {fileID: 0}
   - target: {fileID: 0}
-    propertyPath: duration
-    value: 2
-    objectReference: {fileID: 0}
-  - target: {fileID: 0}
     propertyPath: trigger
-    value: 10
+    value: 1
     objectReference: {fileID: 0}
   m_ExcludedProperties: []
   m_CoupledType:
