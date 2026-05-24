@@ -20,12 +20,14 @@ public class PlayerController : MonoBehaviour
     public float bounceBonusPerFlip = 0.18f;
     public int maxFlipsForBonus = 20;
     public float maxBounceSpeed = 38f;
+    public float bounceSpeedPerJumpHeight = 0.35f;
 
     [Header("Landing")]
     [Range(0f, 90f)]
     public float maxLandingAngle = 25f;
     [Range(0f, 15f)]
     public float perfectLandingAngle = 5f;
+    public float perfectLandingBounceMultiplier = 1.15f;
 
     [Header("Apex Hang")]
     public float apexSpeedThreshold = 2.5f;
@@ -294,6 +296,8 @@ public class PlayerController : MonoBehaviour
 
         int capped = Mathf.Min(flips, maxFlipsForBonus);
         float multiplier = 1f + capped * bounceBonusPerFlip;
+        if (perfect)
+            multiplier *= perfectLandingBounceMultiplier;
 
         LastLandingFlips = flips;
         _airSpinDegrees = 0f;
@@ -302,8 +306,9 @@ public class PlayerController : MonoBehaviour
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
         _rb.AddForce(Vector2.up * bounceForce * multiplier, ForceMode2D.Impulse);
 
-        if (_rb.linearVelocity.y > maxBounceSpeed)
-            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, maxBounceSpeed);
+        float velocityCap = maxBounceSpeed + landing.JumpHeight * bounceSpeedPerJumpHeight;
+        if (_rb.linearVelocity.y > velocityCap)
+            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, velocityCap);
 
         GameplayEventBus.RaiseTotalLifetimeFlips(_lifetimeFlips);
         GameplayEventBus.RaiseTrampolineLanding(landing);

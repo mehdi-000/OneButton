@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 [RequireComponent(typeof(UIDocument))]
+[DefaultExecutionOrder(50)]
 public class MagnifiyingLens : MonoBehaviour
 {
     [SerializeField] RenderTexture closeViewTexture;
@@ -21,6 +22,10 @@ public class MagnifiyingLens : MonoBehaviour
     Image _minimapCloseView;
     bool _minimapVisible;
     bool _gameStarted;
+
+    public bool IsMinimapVisible => _minimapVisible;
+    public float ScreenSizeScaleFactor { get; private set; } = 1f;
+    public float OverallSizeMultiplier => overallSizeMultiplier;
 
     Vector3 _baseScale;
     Camera _cam;
@@ -47,7 +52,7 @@ public class MagnifiyingLens : MonoBehaviour
     {
         _cam = Camera.main;
         if (cameraHeightZoom == null)
-            cameraHeightZoom = FindFirstObjectByType<CameraHeightZoom>();
+            cameraHeightZoom = FindAnyObjectByType<CameraHeightZoom>();
         CacheRefs();
     }
 
@@ -74,6 +79,7 @@ public class MagnifiyingLens : MonoBehaviour
         if (zoomBase <= 0f) return;
 
         float scaleFactor = (zoomCurrent / zoomBase) * overallSizeMultiplier;
+        ScreenSizeScaleFactor = scaleFactor;
         transform.localScale = _baseScale * scaleFactor;
     }
 

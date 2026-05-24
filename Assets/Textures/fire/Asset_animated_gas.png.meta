@@ -124,10 +124,10 @@ TextureImporter:
       name: Asset_animated_gas_0
       rect:
         serializedVersion: 2
-        x: 83
-        y: 1386
-        width: 228
-        height: 526
+        x: 0
+        y: 1025
+        width: 2047
+        height: 1023
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -146,10 +146,10 @@ TextureImporter:
       name: Asset_animated_gas_1
       rect:
         serializedVersion: 2
-        x: 426
-        y: 1217
-        width: 201
-        height: 459
+        x: 0
+        y: 2
+        width: 2047
+        height: 1023
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -160,138 +160,6 @@ TextureImporter:
       bones: []
       spriteID: 61a69c8ea233d0c70800000000000000
       internalID: 8938857094787459606
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Asset_animated_gas_2
-      rect:
-        serializedVersion: 2
-        x: 1261
-        y: 1206
-        width: 228
-        height: 470
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0be43d358ff9e8b50800000000000000
-      internalID: 6597386393051418288
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Asset_animated_gas_3
-      rect:
-        serializedVersion: 2
-        x: 1685
-        y: 1371
-        width: 262
-        height: 510
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: e7dc946ed810b3a70800000000000000
-      internalID: 8807635205218749822
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Asset_animated_gas_4
-      rect:
-        serializedVersion: 2
-        x: 78
-        y: 321
-        width: 234
-        height: 580
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8b1feb1126049a310800000000000000
-      internalID: 1416734347733430712
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Asset_animated_gas_5
-      rect:
-        serializedVersion: 2
-        x: 413
-        y: 115
-        width: 224
-        height: 552
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 03e5458fcb3236050800000000000000
-      internalID: 5792512840255692336
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Asset_animated_gas_6
-      rect:
-        serializedVersion: 2
-        x: 1262
-        y: 92
-        width: 229
-        height: 549
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 24e47739b115c01b0800000000000000
-      internalID: -5689083050395742654
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Asset_animated_gas_7
-      rect:
-        serializedVersion: 2
-        x: 1689
-        y: 306
-        width: 263
-        height: 608
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8491ef526087d65b0800000000000000
-      internalID: -5373506812580587192
       vertices: []
       indices: 
       edges: []
@@ -308,16 +176,12 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":2047.0,"y":1023.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       Asset_animated_gas_0: 2511726619459936824
       Asset_animated_gas_1: 8938857094787459606
-      Asset_animated_gas_2: 6597386393051418288
-      Asset_animated_gas_3: 8807635205218749822
-      Asset_animated_gas_4: 1416734347733430712
-      Asset_animated_gas_5: 5792512840255692336
-      Asset_animated_gas_6: -5689083050395742654
-      Asset_animated_gas_7: -5373506812580587192
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

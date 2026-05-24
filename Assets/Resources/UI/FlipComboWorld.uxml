@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/CrazyPanDogUI.uss?fileID=7433441132597879392&amp;guid=13c0427b0d8b64f3cb637ba695409138&amp;type=3#CrazyPanDogUI"/>
+    <ui:VisualElement name="flip-combo-world-root" picking-mode="Ignore" class="flip-combo-world-root">
+        <ui:VisualElement name="live-flip-wrap" picking-mode="Ignore" class="live-flip-wrap live-flip-wrap--world hidden">
+            <ui:VisualElement name="live-flip-bar" picking-mode="Ignore" class="live-flip-bar">
+                <ui:VisualElement name="live-flip-stack" picking-mode="Ignore" class="live-flip-stack">
+                    <ui:VisualElement name="live-flip-aura-outer" picking-mode="Ignore" class="live-flip-aura live-flip-aura-outer"/>
+                    <ui:VisualElement name="live-flip-aura" picking-mode="Ignore" class="live-flip-aura live-flip-aura-inner"/>
+                    <ui:Label name="live-flip-label" text="x0" class="live-flip-label"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="live-flip-meter" picking-mode="Ignore" class="live-flip-meter">
+                    <ui:VisualElement name="live-flip-meter-fill" picking-mode="Ignore" class="live-flip-meter-fill"/>
+                </ui:VisualElement>
+                <ui:Label name="live-flip-milestone" text="" picking-mode="Ignore" class="live-flip-milestone hidden"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

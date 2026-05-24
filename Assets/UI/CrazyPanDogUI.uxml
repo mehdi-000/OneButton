@@ -66,14 +66,6 @@
             <ui:Label name="score-label" text="0" class="score-label"/>
             <ui:Label text="FLIPS" class="score-sub-label"/>
         </ui:VisualElement>
-        <ui:VisualElement name="live-flip-wrap" picking-mode="Ignore" class="live-flip-wrap">
-            <ui:VisualElement name="VisualElement" class="live-flip-bar">
-                <ui:Label name="live-flip-label" text="x0" class="live-flip-label"/>
-                <ui:VisualElement name="live-flip-meter" class="live-flip-meter">
-                    <ui:VisualElement name="live-flip-meter-fill" class="live-flip-meter-fill"/>
-                </ui:VisualElement>
-            </ui:VisualElement>
-        </ui:VisualElement>
         <ui:VisualElement name="combo-root" picking-mode="Ignore" class="combo-root"/>
     </ui:VisualElement>
 </ui:UXML>
