@@ -45,6 +45,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Altitude Events")]
     [SerializeField] Collider2D playSurfaceCollider;
+    [SerializeField] Collider2D playerBodyCollider;
 
     Rigidbody2D _rb;
     float _defaultGravity;
@@ -69,7 +70,9 @@ public class PlayerController : MonoBehaviour
             _rb.constraints |= RigidbodyConstraints2D.FreezePositionX;
 
         _prevRotation = _rb.rotation;
-        _baselineY = _peakY = transform.position.y;
+        if (playerBodyCollider == null)
+            playerBodyCollider = GetComponent<Collider2D>();
+        _baselineY = _peakY = CurrentReferenceY();
 
         _flipAction = new InputAction("Flip", InputActionType.Button, "<Keyboard>/space");
         _flipAction.AddBinding("<Keyboard>/enter");
@@ -101,7 +104,7 @@ public class PlayerController : MonoBehaviour
             float t = flipRampSeconds > 0f ? Mathf.Clamp01(_flipHoldTime / flipRampSeconds) : 1f;
             t = t * t * (3f - 2f * t);
 
-            float height = Mathf.Max(0f, transform.position.y - _baselineY);
+            float height = Mathf.Max(0f, CurrentReferenceY() - _baselineY);
             float boost = height > spinBoostStartHeight
                 ? Mathf.Min((height - spinBoostStartHeight) * spinBoostPerUnit, maxSpinBoost)
                 : 0f;
@@ -114,7 +117,8 @@ public class PlayerController : MonoBehaviour
         if (!_onTrampoline)
         {
             _airSpinDegrees += Mathf.Abs(Mathf.DeltaAngle(_prevRotation, _rb.rotation));
-            if (transform.position.y > _peakY) _peakY = transform.position.y;
+            float currentY = CurrentReferenceY();
+            if (currentY > _peakY) _peakY = currentY;
 
             if (!_pastApex && _rb.linearVelocity.y < 0f)
             {
@@ -180,17 +184,23 @@ public class PlayerController : MonoBehaviour
             return;
         }
         GameplayEventBus.SetHeightAbovePlaySurface(
-            transform.position.y - playSurfaceCollider.bounds.max.y);
+            CurrentReferenceY() - playSurfaceCollider.bounds.max.y);
     }
 
     void UpdateHighAltitude()
     {
         if (_fallen) { ClearHighAlt(); return; }
-        bool high = transform.position.y >= GameplayEventBus.HighAltitudeThresholdWorldY;
+        bool high = CurrentReferenceY() >= GameplayEventBus.HighAltitudeThresholdWorldY;
         if (high == _highAltActive) return;
         _highAltActive = high;
         if (high) GameplayEventBus.RaiseEnteredHighAir();
         else GameplayEventBus.RaiseExitedHighAir();
+    }
+
+    float CurrentReferenceY()
+    {
+        // Use body center so player rotation does not affect perceived altitude.
+        return playerBodyCollider != null ? playerBodyCollider.bounds.center.y : _rb.position.y;
     }
 
     void ClearHighAlt()
@@ -238,7 +248,7 @@ public class PlayerController : MonoBehaviour
         if (col.collider.GetComponent<bounce>() == null) return;
         _onTrampoline = false;
         _pastApex = false;
-        _baselineY = _peakY = transform.position.y;
+        _baselineY = _peakY = CurrentReferenceY();
     }
 
     bool IsInCenterRect(Vector2 screenPos)
@@ -257,7 +267,7 @@ public class PlayerController : MonoBehaviour
     {
         if (_fallen) return;
 
-        int flips = Mathf.FloorToInt(_airSpinDegrees / 360f);
+        int flips = Mathf.FloorToInt(_airSpinDegrees / 330f);
         float angle = AngleFromUpright();
         float absAngle = Mathf.Abs(angle);
         bool clean = absAngle <= maxLandingAngle;

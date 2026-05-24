@@ -75,8 +75,5 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="combo-root" picking-mode="Ignore" class="combo-root"/>
-        <ui:VisualElement name="minimap-chrome" picking-mode="Ignore" class="minimap-chrome">
-            <ui:Image name="minimap-close-view" picking-mode="Ignore" class="minimap-close-view"/>
-        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
