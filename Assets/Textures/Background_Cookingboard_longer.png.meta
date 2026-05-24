@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 27da9dff162f8490ab47028de4ed6b79
+guid: d0dee387194ea764aad38bef9b7ad7b2
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3882575818373083979
-    second: Background_Cookingboard_0
+      213: 109008615543409631
+    second: Background_Cookingboard_longer_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,23 +100,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Background_Cookingboard_0
+      name: Background_Cookingboard_longer_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
-        width: 3441
-        height: 1313
+        y: 2478
+        width: 3600
+        height: 818
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5bcc95c2dd15e1ac0800000000000000
-      internalID: -3882575818373083979
+      spriteID: fdb0cee12c6438100800000000000000
+      internalID: 109008615543409631
       vertices: []
       indices: 
       edges: []
@@ -125,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: a9d482efdd384724d902d554e01bc145
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Background_Cookingboard_0: -3882575818373083979
+      Background_Cookingboard_longer_0: 109008615543409631
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
