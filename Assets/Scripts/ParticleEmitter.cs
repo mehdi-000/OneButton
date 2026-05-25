@@ -15,6 +15,11 @@ public class ParticleEmitter : MonoBehaviour
         GameplayEventBus.TrampolineLanding += PlayParticles;
     }
 
+    void OnDisable()
+    {
+        GameplayEventBus.TrampolineLanding -= PlayParticles;
+    }
+
     private void PlayParticles(TrampolineLandingInfo info)
     {
 

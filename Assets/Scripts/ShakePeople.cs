@@ -24,6 +24,11 @@ public class MoveCheeringPeople : MonoBehaviour
         GameplayEventBus.TrampolineLanding += MovePeople;
     }
 
+    void OnDisable()
+    {
+        GameplayEventBus.TrampolineLanding -= MovePeople;
+    }
+
     void MovePeople(TrampolineLandingInfo info)
     {
         if (info.CompletedFullFlips >= trigger)

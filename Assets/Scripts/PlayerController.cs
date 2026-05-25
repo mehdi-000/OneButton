@@ -234,8 +234,12 @@ public class PlayerController : MonoBehaviour
         bool wasFlipping = _flipHeld && !_fallen;
         _flipHeld = false;
         _touchAccepted = false;
-        if (wasFlipping && releaseAngularMomentumFactor > 0f)
-            _rb.angularVelocity = _lastFlipSpeed * Mathf.Deg2Rad * releaseAngularMomentumFactor;
+        if (wasFlipping)
+        {
+            GameplayEventBus.RaiseFlipHoldEnded();
+            if (releaseAngularMomentumFactor > 0f)
+                _rb.angularVelocity = _lastFlipSpeed * Mathf.Deg2Rad * releaseAngularMomentumFactor;
+        }
     }
 
     void OnCollisionEnter2D(Collision2D col)

@@ -9,6 +9,7 @@ public static class GameplayEventBus
     public static event Action ExitedAirAboveThreshold;
     public static event Action<int> TotalLifetimeFlipsChanged;
     public static event Action FlipHoldStarted;
+    public static event Action FlipHoldEnded;
     public static event Action<AirborneFlipProgressInfo> AirborneFlipProgress;
     public static event Action PerfectLanding;
     public static event Action ApexReached;
@@ -35,6 +36,9 @@ public static class GameplayEventBus
 
     public static void RaiseFlipHoldStarted() =>
         FlipHoldStarted?.Invoke();
+
+    public static void RaiseFlipHoldEnded() =>
+        FlipHoldEnded?.Invoke();
 
     public static void RaiseEnteredHighAir() =>
         EnteredAirAboveThreshold?.Invoke();

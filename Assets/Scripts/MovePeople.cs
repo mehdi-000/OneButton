@@ -19,6 +19,11 @@ public class ShakePeople : MonoBehaviour
         GameplayEventBus.TrampolineLanding += ShakePivot;
     }
 
+    void OnDisable()
+    {
+        GameplayEventBus.TrampolineLanding -= ShakePivot;
+    }
+
     private void ShakePivot(TrampolineLandingInfo info)
     {
         if (info.CompletedFullFlips >= trigger)
