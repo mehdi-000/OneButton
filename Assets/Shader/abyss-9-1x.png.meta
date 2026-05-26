@@ -1,31 +1,10 @@
 fileFormatVersion: 2
-guid: ce963413d6bd84011b240f77fe182c3a
+guid: d479268e7213f72d285dfc1859283941
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2511726619459936824
-    second: Asset_animated_gas_0
-  - first:
-      213: 8938857094787459606
-    second: Asset_animated_gas_1
-  - first:
-      213: 6597386393051418288
-    second: Asset_animated_gas_2
-  - first:
-      213: 8807635205218749822
-    second: Asset_animated_gas_3
-  - first:
-      213: 1416734347733430712
-    second: Asset_animated_gas_4
-  - first:
-      213: 5792512840255692336
-    second: Asset_animated_gas_5
-  - first:
-      213: -5689083050395742654
-    second: Asset_animated_gas_6
-  - first:
-      213: -5373506812580587192
-    second: Asset_animated_gas_7
+      213: -3211374112297356264
+    second: abyss-9-1x_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -147,45 +126,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Asset_animated_gas_0
+      name: abyss-9-1x_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 1025
-        width: 2047
-        height: 1023
+        y: 0
+        width: 9
+        height: 1
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8326dcd7d027bd220800000000000000
-      internalID: 2511726619459936824
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Asset_animated_gas_1
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 2
-        width: 2047
-        height: 1023
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 61a69c8ea233d0c70800000000000000
-      internalID: 8938857094787459606
+      spriteID: 81471ab6248ee63d0800000000000000
+      internalID: -3211374112297356264
       vertices: []
       indices: 
       edges: []
@@ -194,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: c224ba863210c423c9f341aece957300
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -202,12 +159,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":2047.0,"y":1023.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
-      Asset_animated_gas_0: 2511726619459936824
-      Asset_animated_gas_1: 8938857094787459606
+      abyss-9-1x_0: -3211374112297356264
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
