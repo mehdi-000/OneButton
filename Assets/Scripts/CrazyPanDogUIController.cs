@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.UIElements;
@@ -169,6 +170,13 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (cameraHeightZoom == null)
             cameraHeightZoom = FindAnyObjectByType<CameraHeightZoom>();
         CacheAllRefs();
+    }
+
+    void Update()
+    {
+        if (!_gameOverOpen || Keyboard.current == null) return;
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+            OnGameOverRestartClicked();
     }
 
     void LateUpdate()

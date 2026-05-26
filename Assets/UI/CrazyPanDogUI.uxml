@@ -68,4 +68,9 @@
         </ui:VisualElement>
         <ui:VisualElement name="combo-root" picking-mode="Ignore" class="combo-root"/>
     </ui:VisualElement>
+    <ui:VisualElement name="cheering-crowd" picking-mode="Ignore" class="cheering-crowd">
+        <ui:VisualElement name="cheering-man" picking-mode="Ignore" class="cheering-person cheering-person--man hidden"/>
+        <ui:VisualElement name="cheering-girl" picking-mode="Ignore" class="cheering-person cheering-person--girl hidden"/>
+        <ui:VisualElement name="cheering-alien" picking-mode="Ignore" class="cheering-person cheering-person--alien hidden"/>
+    </ui:VisualElement>
 </ui:UXML>

@@ -19,12 +19,16 @@
 .minimap-chrome.minimap-visible {
     opacity: 1;
     scale: 1 1;
+    border-radius: 50%; 
 }
 
 .minimap-close-view {
     flex-grow: 1;
     width: 100%;
     height: 100%;
+    overflow: hidden;
     border-radius: 50%;
     background-color: rgba(6, 10, 22, 1);
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
 }

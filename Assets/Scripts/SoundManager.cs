@@ -161,7 +161,6 @@ public class SoundManager : MonoBehaviour
     {
         if (!info.WasCleanLanding || !bounce.enabled || bounceClip == null)
             return;
-
         float landingPitch = bounce.pitch + info.CompletedFullFlips * bounce.pitchPerFlip;
         landingPitch = Mathf.Min(landingPitch, bounce.maxPitch);
         PlayOneShot(sfxSource, bounceClip, bounce.volume, landingPitch);

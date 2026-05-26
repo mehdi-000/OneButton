@@ -5,8 +5,8 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
 >
-        <Style src="MagnifiyngLens.uss"/>
+<Style src="MagnifiyngLens.uss"/>
         <ui:VisualElement name="minimap-chrome" picking-mode="Ignore" class="minimap-chrome">
-            <ui:Image name="minimap-close-view" picking-mode="Ignore" class="minimap-close-view"/>
+            <ui:VisualElement name="minimap-close-view" picking-mode="Ignore" class="minimap-close-view"/>
         </ui:VisualElement>
 </ui:UXML>

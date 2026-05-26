@@ -19,7 +19,7 @@ public class MagnifiyingLens : MonoBehaviour
 
     UIDocument _ui;
     VisualElement _minimapChrome;
-    Image _minimapCloseView;
+    VisualElement _minimapCloseView;
     bool _minimapVisible;
     bool _gameStarted;
 
@@ -89,10 +89,10 @@ public class MagnifiyingLens : MonoBehaviour
         if (root == null) return;
 
         _minimapChrome = root.Q<VisualElement>("minimap-chrome");
-        _minimapCloseView = root.Q<Image>("minimap-close-view");
+        _minimapCloseView = root.Q<VisualElement>("minimap-close-view");
 
         if (_minimapCloseView != null && closeViewTexture != null)
-            _minimapCloseView.image = closeViewTexture;
+            _minimapCloseView.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(closeViewTexture));
 
         if (_minimapChrome != null)
             _minimapChrome.style.display = DisplayStyle.None;
