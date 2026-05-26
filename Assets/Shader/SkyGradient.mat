@@ -38,7 +38,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _ColorRamp:
-        m_Texture: {fileID: 2800000, guid: 28792e83b1658dec7ae0eb70265509cb, type: 3}
+        m_Texture: {fileID: 2800000, guid: d479268e7213f72d285dfc1859283941, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -57,6 +57,7 @@ Material:
     m_Floats:
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _invert: 1
     m_Colors:
     - _Color: {r: 0, g: 0.22284847, b: 0.9243933, a: 1}
     - _Color_2: {r: 0, g: 0.8598914, b: 1, a: 1}
