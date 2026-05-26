@@ -31,7 +31,12 @@ public class AudioManagerScript : MonoBehaviour
     {
         GameplayEventBus.TrampolineLanding += OnTrampolineLanding;
         GameplayEventBus.AirborneFlipProgress += OnAirborneFlipProgress;
-        //GameplayEventBus.FallenOffSurface += OnFallenOffSurface;
+    }
+
+    void OnDisable()
+    {
+        GameplayEventBus.TrampolineLanding -= OnTrampolineLanding;
+        GameplayEventBus.AirborneFlipProgress -= OnAirborneFlipProgress;
     }
 
     // Update is called once per frame
