@@ -1,16 +1,10 @@
 fileFormatVersion: 2
-guid: 4ac195a40c248457283b2e0581a19e46
+guid: d0dee387194ea764aad38bef9b7ad7b2
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 59504581431190004
-    second: Background_Wall-deco_5_0
-  - first:
-      213: 2987969752198646472
-    second: Background_Wall-deco_5_1
-  - first:
-      213: -6298053298957109910
-    second: Background_Wall-deco_5_2
+      213: 109008615543409631
+    second: Background_Cookingboard_longer_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -52,13 +46,13 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
-  spriteBorder: {x: 0, y: 0, z: 1661, w: 1655}
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -106,67 +100,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Background_Wall-deco_5_0
+      name: Background_Cookingboard_longer_0
       rect:
         serializedVersion: 2
-        x: 225
-        y: 352
-        width: 1307
-        height: 1770
+        x: 0
+        y: 2478
+        width: 3600
+        height: 818
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4f1e6bef91763d000800000000000000
-      internalID: 59504581431190004
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Background_Wall-deco_5_1
-      rect:
-        serializedVersion: 2
-        x: 262
-        y: 2121
-        width: 39
-        height: 10
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8ca896f98a6677920800000000000000
-      internalID: 2987969752198646472
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Background_Wall-deco_5_2
-      rect:
-        serializedVersion: 2
-        x: 190
-        y: 435
-        width: 8
-        height: 75
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: a653f23a4e1d898a0800000000000000
-      internalID: -6298053298957109910
+      spriteID: fdb0cee12c6438100800000000000000
+      internalID: 109008615543409631
       vertices: []
       indices: 
       edges: []
@@ -175,8 +125,8 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
-    internalID: 1537655665
+    spriteID: 
+    internalID: 0
     vertices: []
     indices: 
     edges: []
@@ -185,9 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Background_Wall-deco_5_0: 59504581431190004
-      Background_Wall-deco_5_1: 2987969752198646472
-      Background_Wall-deco_5_2: -6298053298957109910
+      Background_Cookingboard_longer_0: 109008615543409631
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
