@@ -55,6 +55,7 @@ public class SoundManager : MonoBehaviour
     [SerializeField] AudioClip flipCounterClip;
     [SerializeField] AudioClip fizzleLoopClip;
     [SerializeField] AudioClip musicClip;
+    [SerializeField] AudioClip backgroundAmbience;
 
     [Header("Sound Settings")]
     [SerializeField] BounceSoundSettings bounce = new();
@@ -62,12 +63,14 @@ public class SoundManager : MonoBehaviour
     [SerializeField] FlipCounterSoundSettings flipCounter = new();
     [SerializeField] FizzleSoundSettings fizzle = new();
     [SerializeField] SoundSettings music = new();
+    //[SerializeField] BackgroundAmbience backgroundAmbience = new();
 
     [Header("Sources")]
     [SerializeField] AudioSource sfxSource;
     [SerializeField] AudioSource flipSfxSource;
     [SerializeField] AudioSource loopSource;
     [SerializeField] AudioSource musicSource;
+    [SerializeField] AudioSource backgroundAmbienceSource;
 
     int _lastLiveFlipFloor = -1;
     float _lastMasterSfxVolume = -1f;
@@ -95,6 +98,7 @@ public class SoundManager : MonoBehaviour
             loopSource.playOnAwake = false;
             loopSource.loop = true;
         }
+        
     }
 
     void Start()
