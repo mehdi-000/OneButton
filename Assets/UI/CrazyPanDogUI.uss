@@ -304,7 +304,7 @@
     -unity-font-style: bold;
     color: rgb(255, 220, 60);
     -unity-text-align: middle-center;
-    text-shadow: 0 4px 0 rgb(50, 25, 0), 0 0 28px rgba(255, 180, 0, 0.3);
+    text-shadow: 0 4px 0 rgb(50, 25, 0);
     letter-spacing: 2px;
     margin-bottom: -4px;
 }
@@ -330,7 +330,7 @@
     -unity-font-style: bold;
     color: rgb(180, 220, 255);
     -unity-text-align: middle-center;
-    text-shadow: 0 2px 0 rgb(15, 30, 60), 0 0 14px rgba(100, 180, 255, 0.25);
+    text-shadow: 0 2px 0 rgb(15, 30, 60);
     letter-spacing: 1px;
 }
 
@@ -395,7 +395,7 @@
     -unity-font-style: bold;
     color: rgb(255, 220, 60);
     -unity-text-align: upper-right;
-    text-shadow: 2px 3px 0 rgb(40, 20, 0), 0 0 14px rgba(255, 180, 0, 0.35);
+    text-shadow: 2px 3px 0 rgb(40, 20, 0);
 }
 
 .score-sub-label {
@@ -420,9 +420,35 @@
     -unity-font-style: bold;
     color: rgb(210, 235, 255);
     -unity-text-align: upper-left;
-    text-shadow: 2px 3px 0 rgb(15, 25, 55), 0 6px 16px rgb(40, 70, 140);
+    text-shadow: 2px 3px 0 rgb(15, 25, 55);
 }
 
+
+/* world-space flip combo (renders behind player) */
+.flip-combo-world-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.live-flip-wrap.live-flip-wrap--world {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    width: 100%;
+    align-items: center;
+    transition-property: none;
+}
+
+.live-flip-wrap.live-flip-wrap--world.live-flip-wrap--lens-active .live-flip-bar {
+    scale: 0.8 0.8;
+    transition-property: scale;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+}
 
 /* combo root */
 .combo-root {
@@ -435,99 +461,333 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding-top: 16%;
+    padding-top: 22%;
 }
 
-/* live flip counter */
+/* ═══════════════════════════════════════════════
+   LIVE FLIP COUNTER  (in-jump combo)
+   tier escalation: zero → low → mid → high → hype → god
+   Colors echo title palette (orange / purple / green / gold)
+   ═══════════════════════════════════════════════ */
+
 .live-flip-wrap {
     position: absolute;
     left: 0;
     right: 0;
-    top: 10%;
+    top: 9%;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    transition-property: top;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out;
 }
 
 .live-flip-bar {
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
+    scale: 0.40 0.40;
 }
 
+.live-flip-stack {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-width: 200px;
+    min-height: 110px;
+}
+
+.live-flip-aura {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 220px;
+    height: 220px;
+    margin-left: -110px;
+    margin-top: -110px;
+    border-radius: 110px;
+    opacity: 0;
+    background-color: rgba(255, 200, 60, 0);
+    transition-property: background-color, opacity, scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out;
+}
+
+.live-flip-aura-outer {
+    width: 320px;
+    height: 320px;
+    margin-left: -160px;
+    margin-top: -160px;
+    border-radius: 160px;
+}
+
+/* tier-live-zero — hidden */
+.live-flip-aura.tier-live-zero { opacity: 0; scale: 0.5 0.5; }
+
+/* tier-low (1 flip) — cool cyan */
+.live-flip-aura-inner.tier-low {
+    opacity: 0.50;
+    background-color: rgba(90, 190, 255, 0.7);
+    scale: 0.70 0.70;
+}
+.live-flip-aura-outer.tier-low {
+    opacity: 0.20;
+    background-color: rgba(90, 190, 255, 0.5);
+    scale: 0.55 0.55;
+}
+
+/* tier-mid (2-4) — game gold */
+.live-flip-aura-inner.tier-mid {
+    opacity: 0.65;
+    background-color: rgba(255, 190, 50, 0.85);
+    scale: 0.85 0.85;
+}
+.live-flip-aura-outer.tier-mid {
+    opacity: 0.28;
+    background-color: rgba(255, 165, 0, 0.6);
+    scale: 0.72 0.72;
+}
+
+/* tier-high (5-9) — game orange (title color) */
+.live-flip-aura-inner.tier-high {
+    opacity: 0.78;
+    background-color: rgba(255, 120, 50, 0.9);
+    scale: 1.0 1.0;
+}
+.live-flip-aura-outer.tier-high {
+    opacity: 0.36;
+    background-color: rgba(255, 90, 130, 0.7);
+    scale: 0.86 0.86;
+}
+
+/* tier-hype (10-19) — magenta / purple (title purple) */
+.live-flip-aura-inner.tier-hype {
+    opacity: 0.90;
+    background-color: rgba(255, 80, 200, 0.92);
+    scale: 1.18 1.18;
+}
+.live-flip-aura-outer.tier-hype {
+    opacity: 0.46;
+    background-color: rgba(160, 60, 220, 0.78);
+    scale: 1.02 1.02;
+}
+
+/* tier-god (20+) — green/purple electric (title green) */
+.live-flip-aura-inner.tier-god {
+    opacity: 1.0;
+    background-color: rgba(140, 230, 90, 0.95);
+    scale: 1.35 1.35;
+}
+.live-flip-aura-outer.tier-god {
+    opacity: 0.55;
+    background-color: rgba(170, 110, 255, 0.85);
+    scale: 1.22 1.22;
+}
+
+/* the big number itself */
 .live-flip-label {
-    font-size: 72px;
+    font-size: 92px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    color: rgb(255, 245, 180);
-    text-shadow: 0 4px 0 rgb(20, 20, 50), 0 10px 30px rgb(140, 60, 200);
+    color: rgb(255, 245, 200);
+    letter-spacing: 2px;
+    text-shadow: 0 4px 0 rgb(35, 15, 60);
+    transition-property: color, font-size, letter-spacing;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
 }
 
 .live-flip-label.tier-live-zero {
     font-size: 46px;
-    opacity: 0.45;
+    opacity: 0;
     color: rgb(180, 200, 220);
 }
 
 .live-flip-label.tier-low {
-    font-size: 64px;
-    color: rgb(120, 220, 255);
-    text-shadow: 0 4px 0 rgb(10, 40, 60), 0 8px 22px rgb(60, 120, 200);
+    font-size: 70px;
+    color: rgb(200, 245, 255);
+    text-shadow: 0 4px 0 rgb(10, 40, 70);
 }
 
 .live-flip-label.tier-mid {
-    font-size: 72px;
-    color: rgb(255, 220, 90);
+    font-size: 86px;
+    color: rgb(255, 230, 100);
+    letter-spacing: 3px;
+    text-shadow: 0 5px 0 rgb(80, 35, 0);
 }
 
 .live-flip-label.tier-high {
-    font-size: 82px;
-    color: rgb(255, 90, 200);
-    text-shadow: 0 6px 0 rgb(70, 0, 70), 0 12px 36px rgb(255, 100, 255);
+    font-size: 102px;
+    color: rgb(255, 165, 80);
+    letter-spacing: 5px;
+    text-shadow: 0 6px 0 rgb(90, 30, 5);
 }
 
+.live-flip-label.tier-hype {
+    font-size: 116px;
+    color: rgb(255, 130, 230);
+    letter-spacing: 7px;
+    text-shadow: 0 7px 0 rgb(60, 0, 80);
+}
+
+.live-flip-label.tier-god {
+    font-size: 130px;
+    color: rgb(190, 255, 150);
+    letter-spacing: 9px;
+    text-shadow: 0 8px 0 rgb(40, 0, 90);
+}
+
+/* progress bar to next flip */
 .live-flip-meter {
-    margin-top: 8px;
-    width: 55%;
-    height: 8px;
-    border-radius: 4px;
-    background-color: rgba(20, 15, 40, 0.6);
+    margin-top: 14px;
+    width: 50%;
+    height: 10px;
+    border-radius: 5px;
+    background-color: rgba(20, 15, 40, 0.55);
+    border-width: 1px;
+    border-color: rgba(255, 220, 130, 0.22);
+    overflow: hidden;
 }
 
 .live-flip-meter-fill {
     width: 0%;
     height: 100%;
-    border-radius: 4px;
-    background-color: rgb(255, 110, 200);
+    border-radius: 5px;
+    background-color: rgb(255, 200, 60);
+    transition-property: background-color;
+    transition-duration: 0.2s;
+}
+
+.live-flip-meter-fill.tier-live-zero { background-color: rgba(200, 220, 240, 0.45); }
+.live-flip-meter-fill.tier-low       { background-color: rgb(140, 220, 255); }
+.live-flip-meter-fill.tier-mid       { background-color: rgb(255, 220, 90); }
+.live-flip-meter-fill.tier-high      { background-color: rgb(255, 140, 80); }
+.live-flip-meter-fill.tier-hype      { background-color: rgb(255, 110, 220); }
+.live-flip-meter-fill.tier-god       { background-color: rgb(180, 255, 130); }
+
+/* milestone banner that pops at 5 / 10 / 20 / 50 / 100 */
+.live-flip-milestone {
+    margin-top: 18px;
+    font-size: 34px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(255, 255, 255);
+    letter-spacing: 8px;
+    text-shadow: 0 4px 0 rgb(40, 0, 60);
+    opacity: 0;
+    white-space: nowrap;
+}
+
+.live-flip-milestone.ms-1 {
+    font-size: 32px;
+    color: rgb(255, 230, 100);
+    text-shadow: 0 4px 0 rgb(80, 35, 0);
+}
+
+.live-flip-milestone.ms-2 {
+    font-size: 38px;
+    color: rgb(255, 165, 70);
+    text-shadow: 0 5px 0 rgb(90, 30, 0);
+}
+
+.live-flip-milestone.ms-3 {
+    font-size: 46px;
+    color: rgb(255, 120, 220);
+    letter-spacing: 10px;
+    text-shadow: 0 6px 0 rgb(60, 0, 70);
+}
+
+.live-flip-milestone.ms-4 {
+    font-size: 54px;
+    color: rgb(190, 255, 140);
+    letter-spacing: 12px;
+    text-shadow: 0 6px 0 rgb(40, 0, 90);
+}
+
+.live-flip-milestone.ms-5 {
+    font-size: 64px;
+    color: rgb(255, 245, 200);
+    letter-spacing: 14px;
+    text-shadow: 0 8px 0 rgb(60, 0, 100);
 }
 
 .live-flip-label.idle-flash {
     color: rgb(255, 140, 160);
 }
 
-/* combo popup */
+/* ═══════════════════════════════════════════════
+   COMBO POPUP (on landing)
+   ═══════════════════════════════════════════════ */
 .combo-popup-label {
     position: relative;
-    font-size: 62px;
+    font-size: 68px;
     -unity-font-style: bold;
     color: rgb(255, 240, 120);
     -unity-text-align: middle-center;
-    text-shadow: 0 4px 0 rgb(30, 10, 60), 0 10px 28px rgb(180, 40, 200);
+    letter-spacing: 2px;
+    text-shadow: 0 4px 0 rgb(30, 10, 60);
 }
 
 .combo-popup-label.tier-low {
-    color: rgb(120, 220, 255);
+    color: rgb(180, 240, 255);
     font-size: 56px;
-    text-shadow: 0 4px 0 rgb(10, 40, 60), 0 8px 22px rgb(60, 120, 200);
+    text-shadow: 0 4px 0 rgb(10, 40, 60);
 }
 
 .combo-popup-label.tier-mid {
     color: rgb(255, 220, 90);
-    font-size: 62px;
+    font-size: 70px;
+    letter-spacing: 3px;
+    text-shadow: 0 5px 0 rgb(80, 35, 0);
 }
 
 .combo-popup-label.tier-high {
-    color: rgb(255, 90, 200);
-    font-size: 72px;
-    text-shadow: 0 6px 0 rgb(70, 0, 70), 0 12px 32px rgb(255, 100, 255);
+    color: rgb(255, 150, 70);
+    font-size: 86px;
+    letter-spacing: 5px;
+    text-shadow: 0 6px 0 rgb(90, 25, 5);
 }
+
+.combo-popup-label.tier-hype {
+    color: rgb(255, 100, 220);
+    font-size: 102px;
+    letter-spacing: 7px;
+    text-shadow: 0 7px 0 rgb(60, 0, 80);
+}
+
+.combo-popup-label.tier-god {
+    color: rgb(180, 255, 130);
+    font-size: 118px;
+    letter-spacing: 9px;
+    text-shadow: 0 8px 0 rgb(40, 0, 90);
+}
+
+.combo-popup-perfect {
+    position: relative;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    font-size: 24px;
+    color: rgb(150, 255, 130);
+    letter-spacing: 7px;
+    margin-bottom: 4px;
+    text-shadow: 0 3px 0 rgb(25, 60, 15);
+    rotate: -4deg;
+}
+
+.combo-popup-sub {
+    position: relative;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    font-size: 26px;
+    color: rgb(255, 255, 255);
+    letter-spacing: 6px;
+    margin-top: -6px;
+    text-shadow: 0 3px 0 rgb(40, 0, 60);
+}
+
+.combo-popup-sub.tier-mid { color: rgb(255, 230, 120); text-shadow: 0 3px 0 rgb(80, 35, 0); }
+.combo-popup-sub.tier-high { color: rgb(255, 175, 90); font-size: 30px; }
+.combo-popup-sub.tier-hype { color: rgb(255, 140, 230); font-size: 36px; letter-spacing: 10px; }
+.combo-popup-sub.tier-god { color: rgb(200, 255, 160); font-size: 42px; letter-spacing: 12px; }

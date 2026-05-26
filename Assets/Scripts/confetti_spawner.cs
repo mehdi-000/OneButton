@@ -1,15 +1,13 @@
-using UnityEngine; 
+using UnityEngine;
 
 public class confetti_spawner : MonoBehaviour
-
 {
+    [SerializeField] ParticleSystem particles;
 
-    [SerializeField] private ParticleSystem particles;
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        particles = GetComponent<ParticleSystem>();
+        if (particles == null)
+            particles = GetComponent<ParticleSystem>();
     }
 
     void OnEnable()
@@ -17,18 +15,14 @@ public class confetti_spawner : MonoBehaviour
         GameplayEventBus.TrampolineLanding += PlayParticles;
     }
 
-    // Update is called once per frame
-    void Update()
+    void OnDisable()
     {
-        
+        GameplayEventBus.TrampolineLanding -= PlayParticles;
     }
 
     void PlayParticles(TrampolineLandingInfo info)
     {
-
-        if (info.CompletedFullFlips >= 1 && info.WasCleanLanding)
-        {
+        if (info.WasPerfectLanding && info.CompletedFullFlips >= 1)
             particles.Play();
-        }
     }
 }

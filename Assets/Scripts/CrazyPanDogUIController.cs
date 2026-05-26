@@ -1,18 +1,41 @@
 using System.Collections;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 [RequireComponent(typeof(UIDocument))]
+[DefaultExecutionOrder(100)]
 public class CrazyPanDogUIController : MonoBehaviour
 {
     [SerializeField] float introSeconds = 0.28f;
     [SerializeField] float holdSeconds = 0.42f;
     [SerializeField] float fadeOutSeconds = 0.22f;
     [SerializeField] float jitterPixels = 22f;
-    [SerializeField] float liveCountPulseScale = 1.22f;
-    [SerializeField] float liveCountPulseDuration = 0.14f;
+    [SerializeField] float liveCountPulseScale = 1.32f;
+    [SerializeField] float liveCountPulseDuration = 0.22f;
     [SerializeField] float promptBlinkInterval = 0.8f;
+
+    [Header("World Flip Combo")]
+    [SerializeField] PanelSettings flipComboPanelSettings;
+    [SerializeField] VisualTreeAsset flipComboWorldTree;
+    [Tooltip("Added to (0, HeightAbovePlaySurface, 0). Z puts it behind the player.")]
+    [SerializeField] Vector3 liveCounterWorldOffset = new Vector3(0f, 2.5f, -2.8f);
+    [Tooltip("Target offset when the lens first appears; scales up with lens zoom after that.")]
+    [SerializeField] Vector3 liveCounterLensWorldOffset = new Vector3(2f, 5f, -2.8f);
+    [SerializeField] float liveCounterLensOffsetBlendSeconds = 0.3f;
+    [SerializeField] MagnifiyingLens magnifyingLens;
+
+    [Header("Flip Combo Constant Screen Size")]
+    [FormerlySerializedAs("flipComboReferenceOrthoSize")]
+    [SerializeField] float referenceOrthoSize = 12.12f;
+    [FormerlySerializedAs("flipComboWorldScale")]
+    [SerializeField, Range(0.05f, 2f)] float overallSizeMultiplier = 0.35f;
+    [SerializeField] CameraHeightZoom cameraHeightZoom;
+
+    const float FlipComboWorldPanelWidth = 600f;
+    const float MagnifyingLensWorldPanelWidth = 300f;
 
     [Header("Altitude (optional)")]
     [SerializeField] Transform altitudePlayer;
@@ -27,6 +50,9 @@ public class CrazyPanDogUIController : MonoBehaviour
     [SerializeField] float minimapCloseViewMinHeightMeters = 6f;
 
     UIDocument _ui;
+    UIDocument _worldFlipComboUi;
+    Transform _worldFlipComboTransform;
+    Vector3 _flipComboBaseScale = Vector3.one;
 
     // start screen
     VisualElement _startScreen;
@@ -53,13 +79,20 @@ public class CrazyPanDogUIController : MonoBehaviour
     // game hud
     VisualElement _gameHud;
     VisualElement _liveWrap;
+    VisualElement _liveAuraInner;
+    VisualElement _liveAuraOuter;
     Label _liveLabel;
     VisualElement _meterFill;
+    Label _liveMilestoneLabel;
     VisualElement _altitudeWrap;
     Label _altitudeLabel;
     Label _scoreLabel;
     VisualElement _minimapChrome;
     Image _minimapCloseView;
+
+    Camera _cachedCam;
+    Coroutine _punchRoutine;
+    Coroutine _milestoneRoutine;
 
     int _lastLiveFlipFloor = -1;
     int _totalFlips;
@@ -67,8 +100,32 @@ public class CrazyPanDogUIController : MonoBehaviour
     bool _overlayOpen;
     bool _gameOverOpen;
     bool _minimapVisible;
+    float _flipComboOffsetBlend;
+    bool _flipComboLensClassApplied;
+    float _lensOffsetReferenceZoomRatio = 1f;
+    bool _lensOffsetReferenceCaptured;
     Coroutine _promptBlink;
     Rect _lastSafeArea;
+
+    static readonly string[] TierClasses =
+    {
+        "tier-live-zero", "tier-low", "tier-mid", "tier-high", "tier-hype", "tier-god"
+    };
+
+    static readonly string[] MilestoneClasses =
+    {
+        "ms-1", "ms-2", "ms-3", "ms-4", "ms-5"
+    };
+
+    // (threshold, word, milestone-class)
+    static readonly (int threshold, string word, string cls)[] LiveMilestones =
+    {
+        (5,   "STREAK!",   "ms-1"),
+        (10,  "ON FIRE!",  "ms-2"),
+        (20,  "BLAZING!",  "ms-3"),
+        (50,  "INSANE!",   "ms-4"),
+        (100, "LEGEND!",   "ms-5"),
+    };
 
 
     /// <summary>
@@ -80,6 +137,7 @@ public class CrazyPanDogUIController : MonoBehaviour
     void Awake()
     {
         _ui = GetComponent<UIDocument>();
+        EnsureWorldFlipComboUi();
     }
 
     void OnEnable()
@@ -108,6 +166,8 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void Start()
     {
+        if (cameraHeightZoom == null)
+            cameraHeightZoom = FindAnyObjectByType<CameraHeightZoom>();
         CacheAllRefs();
     }
 
@@ -115,6 +175,8 @@ public class CrazyPanDogUIController : MonoBehaviour
     {
         ApplySafeArea();
         UpdateAltitude();
+        UpdateLiveCounterPlacement();
+        MaintainFlipComboScreenSize();
     }
 
     void OnFlipHoldStarted()
@@ -152,9 +214,6 @@ public class CrazyPanDogUIController : MonoBehaviour
         _btnGameOverRestart = root.Q<Button>("btn-game-over-restart");
 
         _gameHud = root.Q<VisualElement>("game-hud");
-        _liveWrap = root.Q<VisualElement>("live-flip-wrap");
-        _liveLabel = root.Q<Label>("live-flip-label");
-        _meterFill = root.Q<VisualElement>("live-flip-meter-fill");
         _altitudeWrap = root.Q<VisualElement>("altitude-hud-wrap");
         _altitudeLabel = root.Q<Label>("altitude-label");
         _scoreLabel = root.Q<Label>("score-label");
@@ -163,6 +222,54 @@ public class CrazyPanDogUIController : MonoBehaviour
         _minimapCloseView = root.Q<Image>("minimap-close-view");
         if (_minimapCloseView != null && closeViewTexture != null)
             _minimapCloseView.image = closeViewTexture;
+
+        CacheFlipComboWorldRefs();
+    }
+
+    void EnsureWorldFlipComboUi()
+    {
+        if (_worldFlipComboUi != null) return;
+
+        if (flipComboWorldTree == null)
+            flipComboWorldTree = Resources.Load<VisualTreeAsset>("UI/FlipComboWorld");
+        if (flipComboPanelSettings == null || flipComboWorldTree == null) return;
+
+        var go = new GameObject("FlipComboWorld");
+        _worldFlipComboTransform = go.transform;
+        _flipComboBaseScale = _worldFlipComboTransform.localScale;
+
+        _worldFlipComboUi = go.AddComponent<UIDocument>();
+        _worldFlipComboUi.panelSettings = flipComboPanelSettings;
+        _worldFlipComboUi.visualTreeAsset = flipComboWorldTree;
+        _worldFlipComboUi.sortingOrder = -5;
+        ConfigureWorldSpacePanel(_worldFlipComboUi, 600f, 400f);
+
+        go.SetActive(false);
+    }
+
+    static void ConfigureWorldSpacePanel(UIDocument doc, float width, float height)
+    {
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        var type = typeof(UIDocument);
+        type.GetField("m_WorldSpaceSizeMode", flags)?.SetValue(doc, 1);
+        type.GetField("m_WorldSpaceWidth", flags)?.SetValue(doc, width);
+        type.GetField("m_WorldSpaceHeight", flags)?.SetValue(doc, height);
+    }
+
+    void CacheFlipComboWorldRefs()
+    {
+        EnsureWorldFlipComboUi();
+        if (_worldFlipComboUi == null) return;
+
+        VisualElement root = _worldFlipComboUi.rootVisualElement;
+        if (root == null) return;
+
+        _liveWrap = root.Q<VisualElement>("live-flip-wrap");
+        _liveAuraInner = root.Q<VisualElement>("live-flip-aura");
+        _liveAuraOuter = root.Q<VisualElement>("live-flip-aura-outer");
+        _liveLabel = root.Q<Label>("live-flip-label");
+        _meterFill = root.Q<VisualElement>("live-flip-meter-fill");
+        _liveMilestoneLabel = root.Q<Label>("live-flip-milestone");
     }
 
     // ───────── start screen ─────────
@@ -260,11 +367,17 @@ public class CrazyPanDogUIController : MonoBehaviour
         HideElement(_gameOverOverlay);
 
         RefreshAltitudeVisibility();
+        if (_worldFlipComboTransform != null) _worldFlipComboTransform.gameObject.SetActive(true);
         if (_liveWrap != null) _liveWrap.AddToClassList("hidden");
+        HideMilestone();
         if (_scoreLabel != null) _scoreLabel.text = "0";
 
         _minimapVisible = false;
         if (_minimapChrome != null) _minimapChrome.RemoveFromClassList("minimap-visible");
+        _flipComboOffsetBlend = 0f;
+        _lensOffsetReferenceCaptured = false;
+        _lensOffsetReferenceZoomRatio = 1f;
+        UpdateFlipComboLensVisuals(false);
     }
 
     // ───────── overlay input blocking ─────────
@@ -545,16 +658,40 @@ public class CrazyPanDogUIController : MonoBehaviour
             _scoreLabel.text = total.ToString();
     }
 
-    static string TierPopupClass(int flips)
+    // 6-tier escalation used by both live counter & landing popup.
+    static string TierForFlips(int flips)
     {
+        if (flips <= 0) return "tier-live-zero";
         if (flips <= 1) return "tier-low";
-        return flips <= 3 ? "tier-mid" : "tier-high";
+        if (flips <= 4) return "tier-mid";
+        if (flips <= 9) return "tier-high";
+        if (flips <= 19) return "tier-hype";
+        return "tier-god";
     }
 
-    static string TierLiveClass(int visibleFlips)
+    static void ApplyTier(VisualElement el, string tier)
     {
-        if (visibleFlips <= 0) return "tier-live-zero";
-        return TierPopupClass(visibleFlips);
+        if (el == null) return;
+        foreach (string c in TierClasses) el.RemoveFromClassList(c);
+        el.AddToClassList(tier);
+    }
+
+    // Returns the milestone tuple if newN just crossed any threshold from oldN.
+    static bool TryGetCrossedMilestone(int oldN, int newN, out string word, out string cls)
+    {
+        // Crossing in reverse order so 100 wins over 50 etc.
+        for (int i = LiveMilestones.Length - 1; i >= 0; i--)
+        {
+            var m = LiveMilestones[i];
+            if (oldN < m.threshold && newN >= m.threshold)
+            {
+                word = m.word;
+                cls = m.cls;
+                return true;
+            }
+        }
+        word = null; cls = null;
+        return false;
     }
 
     VisualElement ComboRootOrRoot()
@@ -570,12 +707,13 @@ public class CrazyPanDogUIController : MonoBehaviour
     {
         if (!_gameStarted) return;
 
-        if (_liveWrap == null || _liveLabel == null) CacheAllRefs();
+        if (_liveWrap == null || _liveLabel == null) CacheFlipComboWorldRefs();
         if (_liveWrap == null || _liveLabel == null) return;
 
         if (!info.IsAirborne)
         {
             _liveWrap.AddToClassList("hidden");
+            HideMilestone();
             _lastLiveFlipFloor = -1;
             return;
         }
@@ -585,9 +723,11 @@ public class CrazyPanDogUIController : MonoBehaviour
         int n = info.VisibleFullFlipCount;
         _liveLabel.text = n > 0 ? $"x{n}" : string.Empty;
 
-        foreach (string c in new[] { "tier-live-zero", "tier-low", "tier-mid", "tier-high" })
-            _liveLabel.RemoveFromClassList(c);
-        _liveLabel.AddToClassList(TierLiveClass(n));
+        string tier = TierForFlips(n);
+        ApplyTier(_liveLabel, tier);
+        ApplyTier(_liveAuraInner, tier);
+        ApplyTier(_liveAuraOuter, tier);
+        ApplyTier(_meterFill, tier);
 
         if (_meterFill != null)
         {
@@ -595,29 +735,261 @@ public class CrazyPanDogUIController : MonoBehaviour
             _meterFill.style.width = new Length(pct, LengthUnit.Percent);
         }
 
-        if (n > _lastLiveFlipFloor && (_lastLiveFlipFloor >= 0 || n >= 1))
-            StartCoroutine(PunchLabelRoutine());
+        bool incremented = n > _lastLiveFlipFloor && (_lastLiveFlipFloor >= 0 || n >= 1);
+        if (incremented)
+        {
+            if (_punchRoutine != null) StopCoroutine(_punchRoutine);
+            _punchRoutine = StartCoroutine(PunchLabelRoutine(n));
+
+            if (TryGetCrossedMilestone(Mathf.Max(0, _lastLiveFlipFloor), n, out string word, out string cls))
+                TriggerMilestone(word, cls);
+        }
 
         _lastLiveFlipFloor = n;
     }
 
-    IEnumerator PunchLabelRoutine()
+    // ───────── placement: Y from height above play surface only ─────────
+
+    Camera ResolveCamera()
+    {
+        if (_cachedCam != null && _cachedCam.isActiveAndEnabled) return _cachedCam;
+        _cachedCam = Camera.main;
+        return _cachedCam;
+    }
+
+    void UpdateLiveCounterPlacement()
+    {
+        if (_worldFlipComboTransform == null) return;
+
+        bool lensActive = IsMagnifyingLensVisible();
+        float targetBlend = lensActive ? 1f : 0f;
+        float blendSpeed = liveCounterLensOffsetBlendSeconds > 0f
+            ? Time.deltaTime / liveCounterLensOffsetBlendSeconds
+            : 1f;
+        _flipComboOffsetBlend = Mathf.MoveTowards(_flipComboOffsetBlend, targetBlend, blendSpeed);
+
+        if (lensActive && !_lensOffsetReferenceCaptured)
+        {
+            _lensOffsetReferenceZoomRatio = Mathf.Max(0.001f, GetLensZoomRatio());
+            _lensOffsetReferenceCaptured = true;
+        }
+        else if (!lensActive)
+        {
+            _lensOffsetReferenceCaptured = false;
+        }
+
+        Vector3 scaledLensOffset = ComputeScaledLensWorldOffset();
+        Vector3 offset = Vector3.Lerp(liveCounterWorldOffset, scaledLensOffset, _flipComboOffsetBlend);
+        _worldFlipComboTransform.position =
+            new Vector3(0f, GameplayEventBus.HeightAbovePlaySurface, 0f) + offset;
+        _worldFlipComboTransform.rotation = Quaternion.identity;
+
+        UpdateFlipComboLensVisuals(lensActive);
+    }
+
+    Vector3 ComputeScaledLensWorldOffset()
+    {
+        float zoomScale = GetLensZoomRatio() / _lensOffsetReferenceZoomRatio;
+        Vector3 delta = liveCounterLensWorldOffset - liveCounterWorldOffset;
+        return liveCounterWorldOffset + new Vector3(
+            delta.x * zoomScale,
+            delta.y * zoomScale,
+            delta.z);
+    }
+
+    float GetLensZoomRatio()
+    {
+        if (magnifyingLens == null)
+            magnifyingLens = FindAnyObjectByType<MagnifiyingLens>();
+        if (magnifyingLens != null && magnifyingLens.OverallSizeMultiplier > 0f)
+            return magnifyingLens.ScreenSizeScaleFactor / magnifyingLens.OverallSizeMultiplier;
+
+        Camera cam = ResolveCamera();
+        if (cam == null) return 1f;
+
+        float zoomBase = referenceOrthoSize;
+        float zoomCurrent = cam.orthographicSize;
+
+        if (cameraHeightZoom == null)
+            cameraHeightZoom = FindAnyObjectByType<CameraHeightZoom>();
+        if (cameraHeightZoom != null)
+        {
+            zoomBase = cameraHeightZoom.BaseOrthoSize;
+            zoomCurrent = cameraHeightZoom.CurrentOrthoSize;
+        }
+
+        return zoomBase > 0f ? zoomCurrent / zoomBase : 1f;
+    }
+
+    bool IsMagnifyingLensVisible()
+    {
+        if (magnifyingLens == null)
+            magnifyingLens = FindAnyObjectByType<MagnifiyingLens>();
+        return magnifyingLens != null && magnifyingLens.IsMinimapVisible;
+    }
+
+    void UpdateFlipComboLensVisuals(bool lensActive)
+    {
+        if (_liveWrap == null) return;
+
+        if (lensActive && !_flipComboLensClassApplied)
+        {
+            _liveWrap.AddToClassList("live-flip-wrap--lens-active");
+            _flipComboLensClassApplied = true;
+        }
+        else if (!lensActive && _flipComboLensClassApplied)
+        {
+            _liveWrap.RemoveFromClassList("live-flip-wrap--lens-active");
+            _flipComboLensClassApplied = false;
+        }
+    }
+
+    void MaintainFlipComboScreenSize()
+    {
+        if (_worldFlipComboTransform == null) return;
+
+        Camera cam = ResolveCamera();
+        if (cam == null || !cam.orthographic) return;
+
+        float scaleFactor = ComputeFlipComboScreenSizeScale(cam);
+        if (scaleFactor <= 0f) return;
+
+        _worldFlipComboTransform.localScale = _flipComboBaseScale * scaleFactor;
+    }
+
+    float ComputeFlipComboScreenSizeScale(Camera cam)
+    {
+        float zoomRatio = GetLensZoomRatio();
+        if (zoomRatio <= 0f) return 0f;
+
+        // Same zoom curve as MagnifiyingLens.MaintainConstantScreenSize.
+        float scaleFactor = zoomRatio * overallSizeMultiplier;
+
+        // Combo panel is 600uu vs lens 300uu; compensate once the lens is active.
+        float panelRatio = Mathf.Lerp(
+            1f,
+            MagnifyingLensWorldPanelWidth / FlipComboWorldPanelWidth,
+            _flipComboOffsetBlend);
+        return scaleFactor * panelRatio;
+    }
+
+    // ───────── punch animation: overshoot + rotation jitter ─────────
+
+    IEnumerator PunchLabelRoutine(int flipCount)
     {
         if (_liveLabel == null) yield break;
-        float t = 0f;
-        float d = Mathf.Max(0.04f, liveCountPulseDuration);
-        float peak = liveCountPulseScale;
 
+        float d = Mathf.Max(0.10f, liveCountPulseDuration);
+        // Bigger combos punch harder.
+        float bonus = Mathf.Min(0.40f, Mathf.Max(0, flipCount - 1) * 0.04f);
+        float peak = liveCountPulseScale + bonus;
+        float undershoot = 0.92f - bonus * 0.15f;
+
+        float sign = Random.value < 0.5f ? -1f : 1f;
+        float angleAmp = Mathf.Min(14f, 4f + flipCount * 0.7f) * sign;
+
+        float t = 0f;
         while (t < d)
         {
             t += Time.unscaledDeltaTime;
             float u = Mathf.Clamp01(t / d);
-            float s = Mathf.SmoothStep(peak, 1f, u);
+
+            float s;
+            if (u < 0.35f)            s = Mathf.Lerp(1f, peak, u / 0.35f);
+            else if (u < 0.70f)       s = Mathf.Lerp(peak, undershoot, (u - 0.35f) / 0.35f);
+            else                      s = Mathf.Lerp(undershoot, 1f, (u - 0.70f) / 0.30f);
+
+            float angle = angleAmp * (1f - u) * Mathf.Sin(u * Mathf.PI * 2f);
+
             _liveLabel.style.scale = new Scale(Vector3.one * s);
+            _liveLabel.style.rotate = new Rotate(angle);
             yield return null;
         }
         _liveLabel.style.scale = new Scale(Vector3.one);
+        _liveLabel.style.rotate = new Rotate(0f);
+        _punchRoutine = null;
     }
+
+    // ───────── milestone banner (5 / 10 / 20 / 50 / 100) ─────────
+
+    void TriggerMilestone(string word, string cls)
+    {
+        if (_milestoneRoutine != null) StopCoroutine(_milestoneRoutine);
+        _milestoneRoutine = StartCoroutine(ShowMilestoneRoutine(word, cls));
+    }
+
+    void HideMilestone()
+    {
+        if (_milestoneRoutine != null) StopCoroutine(_milestoneRoutine);
+        _milestoneRoutine = null;
+        if (_liveMilestoneLabel != null)
+        {
+            _liveMilestoneLabel.AddToClassList("hidden");
+            _liveMilestoneLabel.style.opacity = 0f;
+            _liveMilestoneLabel.style.scale = new Scale(Vector3.one);
+            _liveMilestoneLabel.style.rotate = new Rotate(0f);
+        }
+    }
+
+    IEnumerator ShowMilestoneRoutine(string word, string cls)
+    {
+        if (_liveMilestoneLabel == null) yield break;
+        _liveMilestoneLabel.text = word;
+        foreach (string c in MilestoneClasses) _liveMilestoneLabel.RemoveFromClassList(c);
+        _liveMilestoneLabel.AddToClassList(cls);
+        _liveMilestoneLabel.RemoveFromClassList("hidden");
+
+        // Punch in.
+        float intro = 0.20f;
+        float t = 0f;
+        float sign = Random.value < 0.5f ? -1f : 1f;
+        float spinAmp = 9f * sign;
+        while (t < intro)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / intro);
+            float eased = 1f - Mathf.Pow(1f - u, 3f);
+            float s = Mathf.Lerp(0.35f, 1.20f, eased);
+            float angle = spinAmp * (1f - eased);
+            _liveMilestoneLabel.style.scale = new Scale(Vector3.one * s);
+            _liveMilestoneLabel.style.rotate = new Rotate(angle);
+            _liveMilestoneLabel.style.opacity = eased;
+            yield return null;
+        }
+
+        // Settle bounce.
+        float settle = 0.16f;
+        t = 0f;
+        while (t < settle)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / settle);
+            float s = Mathf.Lerp(1.20f, 1.0f, u);
+            _liveMilestoneLabel.style.scale = new Scale(Vector3.one * s);
+            _liveMilestoneLabel.style.rotate = new Rotate(0f);
+            yield return null;
+        }
+
+        // Hold while airborne.
+        float hold = 0.85f;
+        yield return new WaitForSecondsRealtime(hold);
+
+        // Fade out.
+        float fade = 0.35f;
+        t = 0f;
+        while (t < fade)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / fade);
+            _liveMilestoneLabel.style.opacity = 1f - u;
+            yield return null;
+        }
+        _liveMilestoneLabel.AddToClassList("hidden");
+        _liveMilestoneLabel.style.opacity = 0f;
+        _milestoneRoutine = null;
+    }
+
+    // ───────── landing combo popup ─────────
 
     void OnTrampolineLanding(TrampolineLandingInfo info)
     {
@@ -630,39 +1002,75 @@ public class CrazyPanDogUIController : MonoBehaviour
         int flips = info.CompletedFullFlips;
         if (flips < 1) return;
 
+        string tier = TierForFlips(flips);
+
+        // Group so the milestone word sits centered above the count.
+        var group = new VisualElement();
+        group.pickingMode = PickingMode.Ignore;
+        group.style.flexDirection = FlexDirection.Column;
+        group.style.alignItems = Align.Center;
+        group.style.opacity = 0f;
+        group.style.marginLeft = new Length(Random.Range(-jitterPixels, jitterPixels), LengthUnit.Pixel);
+
+        if (info.WasPerfectLanding)
+        {
+            var perfectLabel = new Label("PERFECT!");
+            perfectLabel.AddToClassList("combo-popup-perfect");
+            group.Add(perfectLabel);
+        }
+
+        if (flips >= 5 && TryGetCrossedMilestone(0, flips, out string word, out _))
+        {
+            var subLabel = new Label(word);
+            subLabel.AddToClassList("combo-popup-sub");
+            subLabel.AddToClassList(tier);
+            group.Add(subLabel);
+        }
+
         var label = new Label($"x{flips}");
         label.AddToClassList("combo-popup-label");
-        label.AddToClassList(TierPopupClass(flips));
-        label.style.opacity = 0f;
-        label.style.marginLeft = new Length(Random.Range(-jitterPixels, jitterPixels), LengthUnit.Pixel);
+        label.AddToClassList(tier);
+        group.Add(label);
 
-        float introScaleCap = Mathf.Min(2.2f, 1f + flips * 0.22f);
-        label.style.scale = new Scale(Vector3.one * introScaleCap);
+        float introScaleCap = Mathf.Min(2.4f, 1f + flips * 0.18f);
+        group.style.scale = new Scale(Vector3.one * introScaleCap);
 
-        root.Add(label);
-        StartCoroutine(AnimatePopup(label, introScaleCap));
+        root.Add(group);
+        StartCoroutine(AnimatePopup(group, introScaleCap));
 
         SaveScoreToLeaderboard(_totalFlips);
     }
 
-    IEnumerator AnimatePopup(VisualElement label, float introPeakScale)
+    IEnumerator AnimatePopup(VisualElement el, float introPeakScale)
     {
         float rt = Mathf.Max(0.01f, introSeconds);
         float t = 0f;
 
+        // Bouncy entry: overshoot then settle.
         while (t < rt)
         {
             t += Time.unscaledDeltaTime;
             float u = Mathf.Clamp01(t / rt);
             float eased = Mathf.Sin(u * Mathf.PI * 0.5f);
-            label.style.opacity = eased;
-            float s = Mathf.Lerp(introPeakScale, 1f, eased);
-            label.style.scale = new Scale(Vector3.one * s);
+            el.style.opacity = eased;
+            float s = Mathf.Lerp(introPeakScale, 0.94f, eased);
+            el.style.scale = new Scale(Vector3.one * s);
             yield return null;
         }
 
-        label.style.opacity = 1f;
-        label.style.scale = new Scale(Vector3.one);
+        // Tiny over-settle back to 1.
+        float settle = 0.10f;
+        t = 0f;
+        while (t < settle)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / settle);
+            float s = Mathf.Lerp(0.94f, 1f, u);
+            el.style.scale = new Scale(Vector3.one * s);
+            yield return null;
+        }
+        el.style.opacity = 1f;
+        el.style.scale = new Scale(Vector3.one);
 
         if (holdSeconds > 0f)
             yield return new WaitForSecondsRealtime(holdSeconds);
@@ -673,10 +1081,10 @@ public class CrazyPanDogUIController : MonoBehaviour
         {
             t += Time.unscaledDeltaTime;
             float u = Mathf.Clamp01(t / fo);
-            label.style.opacity = 1f - u;
+            el.style.opacity = 1f - u;
             yield return null;
         }
-        label.RemoveFromHierarchy();
+        el.RemoveFromHierarchy();
     }
 
     // ───────── helpers ─────────
