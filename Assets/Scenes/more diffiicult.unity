@@ -3916,7 +3916,7 @@ MonoBehaviour:
   maxFlipsForBonus: 50
   maxBounceSpeed: 50
   bounceSpeedPerJumpHeight: 0.35
-  maxLandingAngle: 40
+  maxLandingAngle: 20
   perfectLandingAngle: 8
   perfectLandingBounceMultiplier: 1.15
   apexSpeedThreshold: 2
