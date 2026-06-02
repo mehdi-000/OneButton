@@ -1,12 +1,15 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/UI/CrazyPanDogUI.uss?fileID=7433441132597879392&amp;guid=13c0427b0d8b64f3cb637ba695409138&amp;type=3#CrazyPanDogUI"/>
     <ui:VisualElement name="start-screen" picking-mode="Ignore" class="start-screen">
+        <ui:Button name="btn-profile" class="profile-chip">
+            <ui:Label name="label-profile-name" text="Player" class="profile-chip-label"/>
+        </ui:Button>
         <ui:VisualElement picking-mode="Ignore" class="title-wrap">
             <ui:Label text="CRAZY" class="title-label title-line-1"/>
             <ui:Label text="PAN" class="title-label title-line-2"/>
             <ui:Label text="DOG" class="title-label title-line-3"/>
         </ui:VisualElement>
-        <ui:Label name="play-prompt" text="tap or press space to flip" class="play-prompt"/>
+        <ui:Label name="play-prompt" text="hold space or hold screen to rotate" class="play-prompt"/>
         <ui:VisualElement picking-mode="Ignore" class="start-bottom-bar">
             <ui:Button name="btn-options" class="corner-btn">
                 <ui:Label text="OPTIONS" class="corner-btn-label"/>
@@ -47,11 +50,19 @@
     </ui:VisualElement>
     <ui:VisualElement name="game-over-overlay" picking-mode="Ignore" class="overlay overlay-game-over hidden">
         <ui:VisualElement class="game-over-card">
-            <ui:Label name="game-over-score" text="0" class="game-over-score"/>
-            <ui:Label text="FLIPS" class="game-over-score-sub"/>
-            <ui:VisualElement picking-mode="Ignore" class="game-over-stat-row">
-                <ui:Label name="game-over-height" text="0.0 m" class="game-over-height"/>
+            <ui:VisualElement name="game-over-score-block" class="game-over-score-block">
+                <ui:Label name="game-over-score" text="0.0" class="game-over-score"/>
+                <ui:Label text="MAX HEIGHT" class="game-over-score-sub"/>
             </ui:VisualElement>
+            <ui:VisualElement name="game-over-rank-badge" class="game-over-rank-badge hidden">
+                <ui:Label name="game-over-rank-caption" text="YOUR RANK" class="game-over-rank-caption"/>
+                <ui:VisualElement name="game-over-rank-value-row" class="game-over-rank-value-row">
+                    <ui:Label name="game-over-rank-hash" text="#" class="game-over-rank-hash"/>
+                    <ui:Label name="game-over-rank-number" text="1" class="game-over-rank-number"/>
+                </ui:VisualElement>
+                <ui:Label name="game-over-rank-fallback" text="" class="game-over-rank-fallback hidden"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="game-over-leaderboard-list" class="leaderboard-list game-over-leaderboard"/>
             <ui:VisualElement picking-mode="Ignore" class="game-over-divider"/>
             <ui:Button name="btn-game-over-restart" class="game-over-restart-btn">
                 <ui:Label text="TRY AGAIN" class="game-over-restart-label"/>

@@ -78,6 +78,42 @@
     color: rgba(255, 255, 255, 0.3);
 }
 
+.profile-chip {
+    position: absolute;
+    top: 5%;
+    right: 5%;
+    max-width: 42%;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    padding: 8px 14px;
+    transition-property: background-color, border-color, scale;
+    transition-duration: 0.12s;
+}
+
+.profile-chip:hover {
+    background-color: rgba(255, 200, 60, 0.3);
+    border-color: rgba(255, 200, 60, 0.6);
+    scale: 1.05 1.05;
+}
+
+.profile-chip:active {
+    background-color: rgba(255, 200, 60, 0.5);
+    scale: 0.94 0.94;
+}
+
+.profile-chip-label {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* bottom corner buttons */
 .start-bottom-bar {
     position: absolute;
@@ -241,15 +277,20 @@
 .leaderboard-list {
     width: 100%;
     flex-direction: column;
+    overflow: visible;
 }
 
 .leaderboard-row {
     flex-direction: row;
     align-items: center;
-    padding: 6px 10px;
-    margin-bottom: 2px;
+    padding: 8px 10px;
+    margin-bottom: 4px;
     border-radius: 8px;
+    border-width: 2px;
+    border-color: transparent;
     background-color: rgba(255, 255, 255, 0.04);
+    overflow: visible;
+    min-height: 30px;
 }
 
 .leaderboard-row-top {
@@ -263,15 +304,20 @@
     width: 32px;
     min-width: 32px;
     -unity-text-align: middle-left;
+    overflow: visible;
+    flex-shrink: 0;
 }
 
 .leaderboard-name {
     font-size: 14px;
     color: rgba(220, 225, 240, 0.85);
     flex-grow: 1;
+    flex-shrink: 1;
     -unity-text-align: middle-left;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: visible;
+    padding-top: 1px;
+    padding-bottom: 1px;
 }
 
 .leaderboard-score {
@@ -280,6 +326,8 @@
     color: rgb(255, 200, 60);
     -unity-text-align: middle-right;
     min-width: 36px;
+    overflow: visible;
+    flex-shrink: 0;
 }
 
 /* ═══════════ GAME OVER ═══════════ */
@@ -299,39 +347,126 @@
     width: 78%;
 }
 
+.game-over-score-block {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
 .game-over-score {
-    font-size: 60px;
+    font-size: 80px;
     -unity-font-style: bold;
     color: rgb(255, 220, 60);
     -unity-text-align: middle-center;
-    text-shadow: 0 4px 0 rgb(50, 25, 0);
+    text-shadow: 0 5px 0 rgb(50, 25, 0);
     letter-spacing: 2px;
     margin-bottom: -4px;
 }
 
 .game-over-score-sub {
-    font-size: 16px;
+    font-size: 17px;
     -unity-font-style: bold;
-    color: rgba(255, 220, 60, 0.6);
+    color: rgba(255, 220, 60, 0.7);
     letter-spacing: 6px;
     -unity-text-align: middle-center;
-    margin-bottom: 12px;
+    margin-bottom: 2px;
 }
 
-.game-over-stat-row {
+.game-over-rank-badge {
+    flex-direction: column;
+    align-items: center;
+    align-self: center;
+    width: auto;
+    min-width: 120px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+    padding: 6px 14px 8px;
+    border-width: 2px;
+    border-color: rgba(255, 200, 60, 0.55);
+    border-radius: 14px;
+    background-color: rgba(255, 200, 60, 0.08);
+}
+
+.game-over-rank-badge-top {
+    border-color: rgb(255, 220, 100);
+    background-color: rgba(255, 200, 60, 0.22);
+}
+
+.game-over-rank-badge-top .game-over-rank-number {
+    color: rgb(255, 240, 120);
+}
+
+.game-over-rank-caption {
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgba(255, 235, 170, 0.85);
+    letter-spacing: 3px;
+    -unity-text-align: middle-center;
+    margin-bottom: 0;
+}
+
+.game-over-rank-value-row {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    margin-bottom: 16px;
 }
 
-.game-over-height {
-    font-size: 24px;
+.game-over-rank-hash {
+    font-size: 36px;
     -unity-font-style: bold;
-    color: rgb(180, 220, 255);
+    color: rgb(255, 200, 60);
+    -unity-text-align: middle-right;
+    margin-right: 0;
+    text-shadow: 0 2px 0 rgb(50, 25, 0);
+}
+
+.game-over-rank-number {
+    font-size: 36px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-left;
+    letter-spacing: -1px;
+    text-shadow: 0 2px 0 rgb(50, 25, 0);
+}
+
+.game-over-rank-fallback {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgba(220, 230, 255, 0.95);
     -unity-text-align: middle-center;
-    text-shadow: 0 2px 0 rgb(15, 30, 60);
     letter-spacing: 1px;
+    margin-top: 2px;
+}
+
+.game-over-leaderboard {
+    width: 100%;
+    margin-bottom: 12px;
+    overflow: visible;
+}
+
+.leaderboard-row-you {
+    background-color: rgba(255, 200, 60, 0.15);
+    border-color: rgba(255, 200, 60, 0.45);
+}
+
+.game-over-leaderboard .leaderboard-row-you {
+    background-color: rgba(80, 190, 255, 0.22);
+    border-width: 2px;
+    border-color: rgba(120, 220, 255, 0.7);
+}
+
+.game-over-leaderboard .leaderboard-row-you .leaderboard-rank {
+    color: rgb(160, 235, 255);
+}
+
+.game-over-leaderboard .leaderboard-row-you .leaderboard-name {
+    color: rgb(220, 245, 255);
+    -unity-font-style: bold;
+}
+
+.game-over-leaderboard .leaderboard-row-you .leaderboard-score {
+    color: rgb(140, 255, 220);
 }
 
 .game-over-divider {

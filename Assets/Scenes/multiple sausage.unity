@@ -3923,7 +3923,7 @@ MonoBehaviour:
   maxFlipsForBonus: 50
   maxBounceSpeed: 50
   bounceSpeedPerJumpHeight: 0.35
-  maxLandingAngle: 40
+  maxLandingAngle: 70
   perfectLandingAngle: 8
   perfectLandingBounceMultiplier: 1.15
   apexSpeedThreshold: 2
@@ -3940,6 +3940,9 @@ MonoBehaviour:
     height: 0.5
   playSurfaceCollider: {fileID: 1482935165}
   playerBodyCollider: {fileID: 1204538550}
+  showLandingAngleHint: 1
+  landingHintMaxHeight: 50
+  unsafeLandingOverlayAlpha: 0.45
 --- !u!114 &1204538554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3952,9 +3955,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8f4a2c19d3b4f6a8e1c0d5b7a9e2f40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleAttractController
-  startLaunchVelocity: 8
+  startLaunchVelocity: 22
   delayBeforeFlipPress: 0.35
-  flipHoldDuration: 1
+  flipHoldDuration: 1.5
   delayBeforeNextCycle: 2
 --- !u!1 &1237578364
 GameObject:
@@ -4666,7 +4669,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.023432195, y: 2.1774883}
+  m_Offset: {x: 0.029036105, y: 2.1774883}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -4676,7 +4679,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 2.3028302, y: 1.5968466}
+  m_Size: {x: 2.6066628, y: 1.5968466}
   m_EdgeRadius: 0
 --- !u!212 &1482935166
 SpriteRenderer:
@@ -5281,22 +5284,23 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1598337223}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f3a8c92d1b4e4567a9f0e1d2c3b4a5f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MultiPlayerJuggleController
   primaryPlayer: {fileID: 1204538553}
   unlockPeakHeightMeters: 100
-  heightStepPerPartnerMeters: 0
+  heightStepPerPartnerMeters: 300
   maxPartnerCount: 2
-  partnerXOffset: 1.2
+  partnerXOffset: 3
   partnerYOffset: -50
   partnerTint: {r: 0.72, g: 0.88, b: 1, a: 1}
   extraPartnerTints: []
   partnerLensTemplate: {fileID: 2088690574}
   partnerCloseViewTexture: {fileID: 8400000, guid: d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6, type: 2}
-  partnerLensOffset: {x: 0, y: -10, z: 0}
+  partnerLensOffset: {x: 0, y: 0, z: 0}
+  partnerLensOutwardOffset: 6
 --- !u!1001 &1628813395
 PrefabInstance:
   m_ObjectHideFlags: 0

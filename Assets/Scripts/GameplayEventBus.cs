@@ -13,16 +13,48 @@ public static class GameplayEventBus
     public static event Action<AirborneFlipProgressInfo> AirborneFlipProgress;
     public static event Action PerfectLanding;
     public static event Action ApexReached;
+    public static event Action<PlayerController> PlayerFell;
+    public static event Action<int> PartnersUnlocked;
 
     public static float HighAltitudeThresholdWorldY { get; set; } = 8f;
+    public static bool PartnersActive { get; private set; }
     public static float HeightAbovePlaySurface { get; private set; }
     public static float PeakHeightAbovePlaySurface { get; private set; }
+    public static float PartnersMinHeightAboveSurface { get; private set; }
+    public static float PartnersMaxHeightAboveSurface { get; private set; }
+
+    public static float PartnersMidHeightAboveSurface =>
+        (PartnersMinHeightAboveSurface + PartnersMaxHeightAboveSurface) * 0.5f;
+
+    public static float PartnersVerticalSpread =>
+        Mathf.Max(0f, PartnersMaxHeightAboveSurface - PartnersMinHeightAboveSurface);
+
+    public static void SetPartnersActive(bool active)
+    {
+        PartnersActive = active;
+        if (!active)
+        {
+            PartnersMinHeightAboveSurface = 0f;
+            PartnersMaxHeightAboveSurface = 0f;
+        }
+    }
+
+    public static void SetPartnersHeights(float minHeight, float maxHeight)
+    {
+        PartnersMinHeightAboveSurface = Mathf.Max(0f, minHeight);
+        PartnersMaxHeightAboveSurface = Mathf.Max(PartnersMinHeightAboveSurface, maxHeight);
+    }
 
     public static void SetHeightAbovePlaySurface(float worldUnits)
     {
         HeightAbovePlaySurface = Mathf.Max(0f, worldUnits);
         if (HeightAbovePlaySurface > PeakHeightAbovePlaySurface)
             PeakHeightAbovePlaySurface = HeightAbovePlaySurface;
+    }
+
+    public static void ResetPeakHeight()
+    {
+        PeakHeightAbovePlaySurface = 0f;
     }
 
     public static void RaiseTrampolineLanding(in TrampolineLandingInfo info) =>
@@ -54,6 +86,12 @@ public static class GameplayEventBus
 
     public static void RaiseApexReached() =>
         ApexReached?.Invoke();
+
+    public static void RaisePlayerFell(PlayerController player) =>
+        PlayerFell?.Invoke(player);
+
+    public static void RaisePartnersUnlocked(int partnerCount) =>
+        PartnersUnlocked?.Invoke(partnerCount);
 }
 
 [Serializable]

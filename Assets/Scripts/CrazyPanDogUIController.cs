@@ -42,6 +42,9 @@ public class CrazyPanDogUIController : MonoBehaviour
     [SerializeField] Transform altitudePlayer;
     [SerializeField] Collider2D altitudeGroundCollider;
 
+    [Header("Gameplay")]
+    [SerializeField] PlayerController playerController;
+
     [Header("Audio")]
     [SerializeField] AudioSource musicSource;
     [SerializeField] AudioSource sfxSource;
@@ -49,6 +52,12 @@ public class CrazyPanDogUIController : MonoBehaviour
     [Header("Minimap")]
     [SerializeField] RenderTexture closeViewTexture;
     [SerializeField] float minimapCloseViewMinHeightMeters = 6f;
+
+    [Header("Game Over Reveal")]
+    [SerializeField] float gameOverScoreCountSeconds = 1.05f;
+    [SerializeField] float gameOverScorePunchSeconds = 0.22f;
+    [SerializeField] float gameOverRankRevealDelay = 0.12f;
+    [SerializeField] float gameOverRankRevealSeconds = 0.35f;
 
     UIDocument _ui;
     UIDocument _worldFlipComboUi;
@@ -59,6 +68,8 @@ public class CrazyPanDogUIController : MonoBehaviour
     VisualElement _startScreen;
     VisualElement _startBottomBar;
     Label _playPrompt;
+    Button _btnProfile;
+    Label _labelProfileName;
     Button _btnOptions;
     Button _btnLeaderboard;
 
@@ -73,8 +84,14 @@ public class CrazyPanDogUIController : MonoBehaviour
     VisualElement _leaderboardList;
 
     VisualElement _gameOverOverlay;
+    VisualElement _gameOverScoreBlock;
     Label _gameOverScore;
-    Label _gameOverHeight;
+    VisualElement _gameOverRankBadge;
+    Label _gameOverRankCaption;
+    VisualElement _gameOverRankValueRow;
+    Label _gameOverRankNumber;
+    Label _gameOverRankFallback;
+    VisualElement _gameOverLeaderboardList;
     Button _btnGameOverRestart;
 
     // game hud
@@ -94,6 +111,7 @@ public class CrazyPanDogUIController : MonoBehaviour
     Camera _cachedCam;
     Coroutine _punchRoutine;
     Coroutine _milestoneRoutine;
+    Coroutine _gameOverRevealRoutine;
 
     int _lastLiveFlipFloor = -1;
     int _totalFlips;
@@ -129,11 +147,15 @@ public class CrazyPanDogUIController : MonoBehaviour
     };
 
 
+    const int LeaderboardMetricVersion = 2;
+
     /// <summary>
     /// True when a UI overlay is open. PlayerController should check this
     /// and ignore input while it's true.
     /// </summary>
     public static bool InputBlocked { get; private set; }
+
+    public static bool GameStarted { get; private set; }
 
     void Awake()
     {
@@ -148,6 +170,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         GameplayEventBus.TotalLifetimeFlipsChanged += OnTotalFlipsChanged;
         GameplayEventBus.FlipHoldStarted += OnFlipHoldStarted;
         GameplayEventBus.FallenOffSurface += OnFallenOffSurface;
+        GameplayEventBus.PartnersUnlocked += OnPartnersUnlocked;
 
         CacheAllRefs();
         SetupStartScreen();
@@ -160,6 +183,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         GameplayEventBus.TotalLifetimeFlipsChanged -= OnTotalFlipsChanged;
         GameplayEventBus.FlipHoldStarted -= OnFlipHoldStarted;
         GameplayEventBus.FallenOffSurface -= OnFallenOffSurface;
+        GameplayEventBus.PartnersUnlocked -= OnPartnersUnlocked;
 
         UnbindButtons();
         InputBlocked = false;
@@ -169,6 +193,8 @@ public class CrazyPanDogUIController : MonoBehaviour
     {
         if (cameraHeightZoom == null)
             cameraHeightZoom = FindAnyObjectByType<CameraHeightZoom>();
+        if (playerController == null)
+            playerController = FindAnyObjectByType<PlayerController>();
         CacheAllRefs();
     }
 
@@ -204,6 +230,8 @@ public class CrazyPanDogUIController : MonoBehaviour
         _startScreen = root.Q<VisualElement>("start-screen");
         _startBottomBar = root.Q<VisualElement>(className: "start-bottom-bar");
         _playPrompt = root.Q<Label>("play-prompt");
+        _btnProfile = root.Q<Button>("btn-profile");
+        _labelProfileName = root.Q<Label>("label-profile-name");
         _btnOptions = root.Q<Button>("btn-options");
         _btnLeaderboard = root.Q<Button>("btn-leaderboard");
 
@@ -217,8 +245,14 @@ public class CrazyPanDogUIController : MonoBehaviour
         _leaderboardList = root.Q<VisualElement>("leaderboard-list");
 
         _gameOverOverlay = root.Q<VisualElement>("game-over-overlay");
+        _gameOverScoreBlock = root.Q<VisualElement>("game-over-score-block");
         _gameOverScore = root.Q<Label>("game-over-score");
-        _gameOverHeight = root.Q<Label>("game-over-height");
+        _gameOverRankBadge = root.Q<VisualElement>("game-over-rank-badge");
+        _gameOverRankCaption = root.Q<Label>("game-over-rank-caption");
+        _gameOverRankValueRow = root.Q<VisualElement>("game-over-rank-value-row");
+        _gameOverRankNumber = root.Q<Label>("game-over-rank-number");
+        _gameOverRankFallback = root.Q<Label>("game-over-rank-fallback");
+        _gameOverLeaderboardList = root.Q<VisualElement>("game-over-leaderboard-list");
         _btnGameOverRestart = root.Q<Button>("btn-game-over-restart");
 
         _gameHud = root.Q<VisualElement>("game-hud");
@@ -285,9 +319,13 @@ public class CrazyPanDogUIController : MonoBehaviour
     void SetupStartScreen()
     {
         _gameStarted = false;
+        GameStarted = false;
         _overlayOpen = false;
         _gameOverOpen = false;
         InputBlocked = false;
+
+        MigrateLeaderboardMetricIfNeeded();
+        RefreshProfileName();
 
         ShowElement(_startScreen);
         HideElement(_gameHud);
@@ -320,14 +358,36 @@ public class CrazyPanDogUIController : MonoBehaviour
             _inputPlayerName.RegisterValueChangedCallback(OnPlayerNameChanged);
         }
 
-        PopulateLeaderboard();
+        PopulateLeaderboard(_leaderboardList);
 
         if (_promptBlink != null) StopCoroutine(_promptBlink);
         _promptBlink = StartCoroutine(PromptBlinkRoutine());
     }
 
+    void RefreshProfileName()
+    {
+        if (_labelProfileName == null) return;
+        string name = PlayerPrefs.GetString("PlayerName", "Player");
+        _labelProfileName.text = string.IsNullOrWhiteSpace(name) ? "Player" : name.Trim();
+    }
+
+    static void MigrateLeaderboardMetricIfNeeded()
+    {
+        if (PlayerPrefs.GetInt("LB_MetricVersion", 0) >= LeaderboardMetricVersion) return;
+        PlayerPrefs.SetInt("LB_Count", 0);
+        PlayerPrefs.SetInt("LB_MetricVersion", LeaderboardMetricVersion);
+        PlayerPrefs.Save();
+    }
+
+    static int HeightScoreFromPeak(float peakMeters) =>
+        Mathf.RoundToInt(Mathf.Max(0f, peakMeters) * 10f);
+
+    static string FormatHeightScore(int storedScore) =>
+        $"{storedScore / 10f:F1} m";
+
     void BindButtons()
     {
+        if (_btnProfile != null) _btnProfile.clicked += OnOptionsClicked;
         if (_btnOptions != null) _btnOptions.clicked += OnOptionsClicked;
         if (_btnLeaderboard != null) _btnLeaderboard.clicked += OnLeaderboardClicked;
         if (_btnOptionsClose != null) _btnOptionsClose.clicked += OnOptionsCloseClicked;
@@ -337,6 +397,7 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void UnbindButtons()
     {
+        if (_btnProfile != null) _btnProfile.clicked -= OnOptionsClicked;
         if (_btnOptions != null) _btnOptions.clicked -= OnOptionsClicked;
         if (_btnLeaderboard != null) _btnLeaderboard.clicked -= OnLeaderboardClicked;
         if (_btnOptionsClose != null) _btnOptionsClose.clicked -= OnOptionsCloseClicked;
@@ -362,7 +423,12 @@ public class CrazyPanDogUIController : MonoBehaviour
     void TransitionToGame()
     {
         _gameStarted = true;
+        GameStarted = true;
         if (_promptBlink != null) StopCoroutine(_promptBlink);
+
+        GameplayEventBus.ResetPeakHeight();
+        if (playerController != null)
+            playerController.ResetSessionScores();
 
         HideElement(_startScreen);
         HideElement(_optionsOverlay);
@@ -420,18 +486,208 @@ public class CrazyPanDogUIController : MonoBehaviour
         HideElement(_optionsOverlay);
         HideElement(_leaderboardOverlay);
 
-        if (_gameOverScore != null)
-            _gameOverScore.text = _totalFlips.ToString();
+        float peak = GameplayEventBus.PeakHeightAbovePlaySurface;
+        int runScore = HeightScoreFromPeak(peak);
+        int rank = SaveScoreToLeaderboard(runScore);
+        string playerName = PlayerPrefs.GetString("PlayerName", "Player");
 
-        if (_gameOverHeight != null)
-        {
-            float h = GameplayEventBus.PeakHeightAbovePlaySurface;
-            _gameOverHeight.text = $"{h:F1} m";
-        }
+        PopulateLeaderboard(_gameOverLeaderboardList, playerName, rank, aboveCount: 2, belowCount: 2);
+        ResetGameOverPresentation();
 
         ShowElement(_gameOverOverlay);
         if (_gameOverOverlay != null)
             _gameOverOverlay.pickingMode = PickingMode.Position;
+
+        if (_gameOverRevealRoutine != null)
+            StopCoroutine(_gameOverRevealRoutine);
+        _gameOverRevealRoutine = StartCoroutine(GameOverRevealRoutine(peak, runScore, rank));
+    }
+
+    void ResetGameOverPresentation()
+    {
+        if (_gameOverScore != null)
+        {
+            _gameOverScore.text = "0.0";
+            _gameOverScore.style.opacity = 0f;
+            _gameOverScore.style.scale = new Scale(Vector3.one * 0.35f);
+            _gameOverScore.style.rotate = new Rotate(0f);
+        }
+
+        if (_gameOverScoreBlock != null)
+            _gameOverScoreBlock.style.opacity = 1f;
+
+        HideElement(_gameOverRankBadge);
+        if (_gameOverRankBadge != null)
+        {
+            _gameOverRankBadge.RemoveFromClassList("game-over-rank-badge-top");
+            _gameOverRankBadge.style.opacity = 0f;
+            _gameOverRankBadge.style.scale = new Scale(Vector3.one * 0.7f);
+        }
+
+        if (_gameOverRankValueRow != null)
+            ShowElement(_gameOverRankValueRow);
+        if (_gameOverRankCaption != null)
+            ShowElement(_gameOverRankCaption);
+        HideElement(_gameOverRankFallback);
+
+        if (_gameOverLeaderboardList != null)
+            _gameOverLeaderboardList.style.opacity = 0.35f;
+    }
+
+    IEnumerator GameOverRevealRoutine(float targetHeight, int runScore, int rank)
+    {
+        float countDur = Mathf.Max(0.01f, gameOverScoreCountSeconds);
+        float punchDur = Mathf.Max(0.01f, gameOverScorePunchSeconds);
+        float target = Mathf.Max(0f, targetHeight);
+
+        // Count up max height with ease-out while scaling in.
+        float t = 0f;
+        while (t < countDur)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / countDur);
+            float eased = 1f - Mathf.Pow(1f - u, 3f);
+            float shown = target * eased;
+
+            if (_gameOverScore != null)
+            {
+                _gameOverScore.text = $"{shown:F1}";
+                float s = Mathf.Lerp(0.45f, 1.08f, eased);
+                _gameOverScore.style.scale = new Scale(Vector3.one * s);
+                _gameOverScore.style.opacity = Mathf.Lerp(0f, 1f, Mathf.Min(1f, u * 2.5f));
+                float wobble = Mathf.Sin(u * Mathf.PI * 3f) * (1f - u) * 4f;
+                _gameOverScore.style.rotate = new Rotate(wobble);
+            }
+
+            yield return null;
+        }
+
+        if (_gameOverScore != null)
+        {
+            _gameOverScore.text = $"{target:F1}";
+            _gameOverScore.style.opacity = 1f;
+        }
+
+        // Landing punch on the final height.
+        t = 0f;
+        float sign = Random.value < 0.5f ? -1f : 1f;
+        float angleAmp = 7f * sign;
+        while (t < punchDur)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / punchDur);
+            float s;
+            if (u < 0.45f)       s = Mathf.Lerp(1.08f, 1.22f, u / 0.45f);
+            else if (u < 0.78f)  s = Mathf.Lerp(1.22f, 0.96f, (u - 0.45f) / 0.33f);
+            else                 s = Mathf.Lerp(0.96f, 1f, (u - 0.78f) / 0.22f);
+
+            if (_gameOverScore != null)
+            {
+                _gameOverScore.style.scale = new Scale(Vector3.one * s);
+                _gameOverScore.style.rotate = new Rotate(angleAmp * (1f - u));
+            }
+            yield return null;
+        }
+
+        if (_gameOverScore != null)
+        {
+            _gameOverScore.style.scale = new Scale(Vector3.one);
+            _gameOverScore.style.rotate = new Rotate(0f);
+        }
+
+        if (gameOverRankRevealDelay > 0f)
+            yield return new WaitForSecondsRealtime(gameOverRankRevealDelay);
+
+        ConfigureGameOverRankBadge(runScore, rank);
+        ShowElement(_gameOverRankBadge);
+
+        float revealDur = Mathf.Max(0.01f, gameOverRankRevealSeconds);
+        t = 0f;
+        while (t < revealDur)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / revealDur);
+            float eased = 1f - Mathf.Pow(1f - u, 3f);
+            float s = Mathf.Lerp(0.72f, 1.06f, eased);
+            if (_gameOverRankBadge != null)
+            {
+                _gameOverRankBadge.style.opacity = eased;
+                _gameOverRankBadge.style.scale = new Scale(Vector3.one * s);
+            }
+            yield return null;
+        }
+
+        if (_gameOverRankBadge != null)
+        {
+            _gameOverRankBadge.style.opacity = 1f;
+            _gameOverRankBadge.style.scale = new Scale(Vector3.one);
+        }
+
+        // Fade leaderboard in after the headline stats land.
+        if (_gameOverLeaderboardList != null)
+        {
+            float lbFade = 0.28f;
+            t = 0f;
+            while (t < lbFade)
+            {
+                t += Time.unscaledDeltaTime;
+                float u = Mathf.Clamp01(t / lbFade);
+                _gameOverLeaderboardList.style.opacity = Mathf.Lerp(0.35f, 1f, u);
+                yield return null;
+            }
+            _gameOverLeaderboardList.style.opacity = 1f;
+        }
+
+        _gameOverRevealRoutine = null;
+    }
+
+    void ConfigureGameOverRankBadge(int runScore, int rank)
+    {
+        if (_gameOverRankBadge == null) return;
+
+        if (runScore <= 0)
+        {
+            if (_gameOverRankCaption != null)
+                _gameOverRankCaption.text = "RESULT";
+            HideElement(_gameOverRankValueRow);
+            if (_gameOverRankCaption != null)
+                HideElement(_gameOverRankCaption);
+            if (_gameOverRankFallback != null)
+            {
+                _gameOverRankFallback.text = "NO HEIGHT RECORDED";
+                ShowElement(_gameOverRankFallback);
+            }
+            return;
+        }
+
+        if (_gameOverRankCaption != null)
+        {
+            _gameOverRankCaption.text = "YOUR RANK";
+            ShowElement(_gameOverRankCaption);
+        }
+
+        if (rank > 0)
+        {
+            if (rank <= 3)
+                _gameOverRankBadge.AddToClassList("game-over-rank-badge-top");
+            else
+                _gameOverRankBadge.RemoveFromClassList("game-over-rank-badge-top");
+
+            ShowElement(_gameOverRankValueRow);
+            HideElement(_gameOverRankFallback);
+            if (_gameOverRankNumber != null)
+                _gameOverRankNumber.text = rank.ToString();
+            return;
+        }
+
+        _gameOverRankBadge.RemoveFromClassList("game-over-rank-badge-top");
+
+        HideElement(_gameOverRankValueRow);
+        if (_gameOverRankFallback != null)
+        {
+            _gameOverRankFallback.text = "NOT IN TOP 10";
+            ShowElement(_gameOverRankFallback);
+        }
     }
 
     void OnGameOverRestartClicked()
@@ -449,6 +705,7 @@ public class CrazyPanDogUIController : MonoBehaviour
     void OnOptionsCloseClicked()
     {
         CloseOverlay(_optionsOverlay);
+        RefreshProfileName();
         PlayerPrefs.Save();
     }
 
@@ -468,6 +725,7 @@ public class CrazyPanDogUIController : MonoBehaviour
     {
         string name = string.IsNullOrWhiteSpace(evt.newValue) ? "Player" : evt.newValue.Trim();
         PlayerPrefs.SetString("PlayerName", name);
+        RefreshProfileName();
     }
 
     void ApplyMusicVolume(float val)
@@ -484,7 +742,7 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void OnLeaderboardClicked()
     {
-        PopulateLeaderboard();
+        PopulateLeaderboard(_leaderboardList);
         OpenOverlay(_leaderboardOverlay);
     }
 
@@ -493,10 +751,15 @@ public class CrazyPanDogUIController : MonoBehaviour
         CloseOverlay(_leaderboardOverlay);
     }
 
-    void PopulateLeaderboard()
+    void PopulateLeaderboard(
+        VisualElement list,
+        string highlightPlayerName = null,
+        int centerRank = 0,
+        int aboveCount = 0,
+        int belowCount = 0)
     {
-        if (_leaderboardList == null) return;
-        _leaderboardList.Clear();
+        if (list == null) return;
+        list.Clear();
 
         int count = PlayerPrefs.GetInt("LB_Count", 0);
         if (count == 0)
@@ -506,37 +769,62 @@ public class CrazyPanDogUIController : MonoBehaviour
             empty.style.fontSize = 18;
             empty.style.unityTextAlign = TextAnchor.MiddleCenter;
             empty.style.marginTop = 16;
-            _leaderboardList.Add(empty);
+            list.Add(empty);
             return;
         }
 
-        for (int i = 0; i < Mathf.Min(count, 10); i++)
+        int maxShown = Mathf.Min(count, 10);
+        int startIndex = 0;
+        int endIndex = maxShown - 1;
+
+        if (aboveCount > 0 || belowCount > 0)
+        {
+            if (centerRank > 0)
+            {
+                int playerIndex = centerRank - 1;
+                startIndex = Mathf.Max(0, playerIndex - aboveCount);
+                endIndex = Mathf.Min(maxShown - 1, playerIndex + belowCount);
+            }
+            else
+            {
+                endIndex = Mathf.Min(maxShown, 5) - 1;
+            }
+        }
+
+        for (int i = startIndex; i <= endIndex; i++)
         {
             int score = PlayerPrefs.GetInt($"LB_Score_{i}", 0);
-            string playerName = PlayerPrefs.GetString($"LB_Name_{i}", "Player");
+            string entryName = PlayerPrefs.GetString($"LB_Name_{i}", "Player");
             var row = new VisualElement();
             row.AddToClassList("leaderboard-row");
             if (i < 3) row.AddToClassList("leaderboard-row-top");
 
-            var rank = new Label($"#{i + 1}");
-            rank.AddToClassList("leaderboard-rank");
+            bool isCurrentRun = centerRank > 0 && i + 1 == centerRank;
+            bool isNameMatch = !string.IsNullOrEmpty(highlightPlayerName) &&
+                string.Equals(entryName, highlightPlayerName, System.StringComparison.OrdinalIgnoreCase);
+            if (isCurrentRun || (centerRank == 0 && isNameMatch))
+                row.AddToClassList("leaderboard-row-you");
 
-            var nameLabel = new Label(playerName);
+            var rankLabel = new Label($"#{i + 1}");
+            rankLabel.AddToClassList("leaderboard-rank");
+
+            var nameLabel = new Label(entryName);
             nameLabel.AddToClassList("leaderboard-name");
 
-            var sc = new Label($"{score}");
+            var sc = new Label(FormatHeightScore(score));
             sc.AddToClassList("leaderboard-score");
 
-            row.Add(rank);
+            row.Add(rankLabel);
             row.Add(nameLabel);
             row.Add(sc);
-            _leaderboardList.Add(row);
+            list.Add(row);
         }
     }
 
-    void SaveScoreToLeaderboard(int score)
+    /// <returns>1-based rank if the score made the top 10, otherwise 0.</returns>
+    int SaveScoreToLeaderboard(int score)
     {
-        if (score <= 0) return;
+        if (score <= 0) return 0;
 
         string playerName = PlayerPrefs.GetString("PlayerName", "Player");
 
@@ -557,6 +845,9 @@ public class CrazyPanDogUIController : MonoBehaviour
             if (score > scores[i]) { insertIdx = i; break; }
         }
 
+        if (insertIdx >= maxEntries)
+            return 0;
+
         int newCount = Mathf.Min(count + 1, maxEntries);
         PlayerPrefs.SetInt("LB_Count", newCount);
 
@@ -571,6 +862,8 @@ public class CrazyPanDogUIController : MonoBehaviour
         PlayerPrefs.SetInt($"LB_Score_{insertIdx}", score);
         PlayerPrefs.SetString($"LB_Name_{insertIdx}", playerName);
         PlayerPrefs.Save();
+
+        return insertIdx < maxEntries ? insertIdx + 1 : 0;
     }
 
     // ───────── safe area ─────────
@@ -665,6 +958,31 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (_scoreLabel != null)
             _scoreLabel.text = total.ToString();
     }
+
+    void OnPartnersUnlocked(int partnerCount)
+    {
+        if (!_gameStarted) return;
+        TriggerMilestone(PartnerMilestoneLabel(partnerCount), PartnerMilestoneClass(partnerCount));
+    }
+
+    static string PartnerMilestoneLabel(int partnerCount) => partnerCount switch
+    {
+        1 => "DUO!",
+        2 => "TRIO!",
+        3 => "QUAD!",
+        4 => "QUINT!",
+        5 => "SIX!",
+        6 => "SEVEN!",
+        _ => $"{partnerCount + 1}-PACK!",
+    };
+
+    static string PartnerMilestoneClass(int partnerCount) => partnerCount switch
+    {
+        1 => "ms-3",
+        2 => "ms-4",
+        3 => "ms-4",
+        _ => "ms-5",
+    };
 
     // 6-tier escalation used by both live counter & landing popup.
     static string TierForFlips(int flips)
@@ -1045,8 +1363,6 @@ public class CrazyPanDogUIController : MonoBehaviour
 
         root.Add(group);
         StartCoroutine(AnimatePopup(group, introScaleCap));
-
-        SaveScoreToLeaderboard(_totalFlips);
     }
 
     IEnumerator AnimatePopup(VisualElement el, float introPeakScale)

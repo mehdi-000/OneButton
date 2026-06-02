@@ -49,19 +49,91 @@ public class PlayerController : MonoBehaviour
     [SerializeField] Collider2D playSurfaceCollider;
     [SerializeField] Collider2D playerBodyCollider;
 
+    [Header("Landing Angle Hint")]
+    [SerializeField] bool showLandingAngleHint = true;
+    [SerializeField] float landingHintMaxHeight = 10f;
+    [Range(0f, 1f)]
+    [SerializeField] float unsafeLandingOverlayAlpha = 0.45f;
+
     Rigidbody2D _rb;
     float _defaultGravity;
     InputAction _flipAction;
 
-    bool _flipHeld, _touchAccepted, _fallen, _onTrampoline, _pastApex;
+    bool _flipHeld, _touchAccepted, _fallen, _onTrampoline, _pastApex, _attractFlipHeld;
+    bool _externalFlipHeld, _flipInputManaged, _publishesFlipProgress = true;
     float _flipHoldTime, _lastFlipSpeed;
     float _prevRotation, _airSpinDegrees;
     float _baselineY, _peakY;
     bool _highAltActive;
     int _lifetimeFlips;
+    SpriteRenderer _bodyRenderer;
+    SpriteRenderer _landingHintOverlay;
 
     public int LastLandingFlips { get; private set; }
+    public float LandingAngleDegreesFromUpright => AngleFromUpright();
+    public bool IsLandingAngleSafe => Mathf.Abs(LandingAngleDegreesFromUpright) <= maxLandingAngle;
     public bool IsOnTrampoline => _onTrampoline;
+    public bool AttractMode { get; set; }
+    public bool HasFallen => _fallen;
+    public bool IsFlipHeld => _flipHeld && !_fallen;
+    public float FlipHoldTime => _flipHoldTime;
+    public float HeightAbovePlaySurface { get; private set; }
+    public Transform PlayerRoot => transform.parent != null ? transform.parent : transform;
+
+    public void SetFlipInputManaged(bool managed)
+    {
+        _flipInputManaged = managed;
+        if (!managed)
+        {
+            if (isActiveAndEnabled)
+                _flipAction.Enable();
+            return;
+        }
+
+        if (_flipHeld)
+        {
+            _flipHeld = false;
+            _touchAccepted = false;
+            GameplayEventBus.RaiseFlipHoldEnded();
+        }
+
+        _flipAction.Disable();
+    }
+
+    public void SetPublishesFlipProgress(bool publishes) =>
+        _publishesFlipProgress = publishes;
+
+    public void SetExternalFlipHeld(bool held, float holdTime = -1f)
+    {
+        if (_fallen || AttractMode) return;
+
+        if (held)
+        {
+            _externalFlipHeld = true;
+            _flipHoldTime = holdTime >= 0f ? holdTime : 0f;
+        }
+        else if (_externalFlipHeld)
+        {
+            _externalFlipHeld = false;
+            if (releaseAngularMomentumFactor > 0f)
+                _rb.angularVelocity = _lastFlipSpeed * Mathf.Deg2Rad * releaseAngularMomentumFactor;
+        }
+    }
+
+    public void SetAttractFlipHeld(bool held)
+    {
+        if (_fallen) return;
+        _attractFlipHeld = held && AttractMode;
+        if (held)
+            _flipHoldTime = 0f;
+    }
+
+    public void ResetSessionScores()
+    {
+        _airSpinDegrees = 0f;
+        _lifetimeFlips = 0;
+        GameplayEventBus.RaiseTotalLifetimeFlips(0);
+    }
 
     void Awake()
     {
@@ -100,7 +172,7 @@ public class PlayerController : MonoBehaviour
         PublishAltitude();
         if (_fallen) return;
 
-        if (_flipHeld)
+        if (_flipHeld || _attractFlipHeld || _externalFlipHeld)
         {
             _flipHoldTime += Time.fixedDeltaTime;
             float t = flipRampSeconds > 0f ? Mathf.Clamp01(_flipHoldTime / flipRampSeconds) : 1f;
@@ -145,12 +217,17 @@ public class PlayerController : MonoBehaviour
         int flips = airborne ? Mathf.FloorToInt(_airSpinDegrees / 330f) : 0;
         float progress = airborne ? Mathf.Repeat(_airSpinDegrees, 330f) / 330f : 0f;
 
-        GameplayEventBus.RaiseAirborneFlipProgress(new AirborneFlipProgressInfo
+        if (_publishesFlipProgress)
         {
-            IsAirborne = airborne,
-            VisibleFullFlipCount = flips,
-            ProgressTowardNextFlip = Mathf.Clamp01(progress),
-        });
+            GameplayEventBus.RaiseAirborneFlipProgress(new AirborneFlipProgressInfo
+            {
+                IsAirborne = airborne,
+                VisibleFullFlipCount = flips,
+                ProgressTowardNextFlip = Mathf.Clamp01(progress),
+            });
+        }
+
+        UpdateLandingAngleTint();
     }
 
     void ApplyApexHang()
@@ -182,11 +259,17 @@ public class PlayerController : MonoBehaviour
     {
         if (_fallen || playSurfaceCollider == null)
         {
-            GameplayEventBus.SetHeightAbovePlaySurface(0f);
+            HeightAbovePlaySurface = 0f;
+            if (!GameplayEventBus.PartnersActive)
+                GameplayEventBus.SetHeightAbovePlaySurface(0f);
             return;
         }
-        GameplayEventBus.SetHeightAbovePlaySurface(
+
+        HeightAbovePlaySurface = Mathf.Max(0f,
             CurrentReferenceY() - playSurfaceCollider.bounds.max.y);
+
+        if (!GameplayEventBus.PartnersActive)
+            GameplayEventBus.SetHeightAbovePlaySurface(HeightAbovePlaySurface);
     }
 
     void UpdateHighAltitude()
@@ -214,7 +297,7 @@ public class PlayerController : MonoBehaviour
 
     void OnFlipDown(InputAction.CallbackContext ctx)
     {
-        if (_fallen || CrazyPanDogUIController.InputBlocked) return;
+        if (_flipInputManaged || _fallen || CrazyPanDogUIController.InputBlocked) return;
 
         if (ctx.control?.device is Pointer)
         {
@@ -230,6 +313,7 @@ public class PlayerController : MonoBehaviour
 
     void OnFlipUp(InputAction.CallbackContext ctx)
     {
+        if (_flipInputManaged) return;
         if (ctx.control?.device is Pointer && !_touchAccepted) return;
         bool wasFlipping = _flipHeld && !_fallen;
         _flipHeld = false;
@@ -269,6 +353,66 @@ public class PlayerController : MonoBehaviour
         return z > 180f ? z - 360f : z;
     }
 
+    void CacheBodyRenderer()
+    {
+        if (_bodyRenderer != null) return;
+
+        var renderers = GetComponentsInChildren<SpriteRenderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            var renderer = renderers[i];
+            if (!renderer.enabled || renderer.GetComponentInParent<Camera>() != null)
+                continue;
+
+            _bodyRenderer = renderer;
+            return;
+        }
+    }
+
+    void EnsureLandingHintOverlay()
+    {
+        CacheBodyRenderer();
+        if (_bodyRenderer == null || _landingHintOverlay != null)
+            return;
+
+        var overlayGo = new GameObject("LandingHintOverlay");
+        overlayGo.transform.SetParent(_bodyRenderer.transform, false);
+
+        _landingHintOverlay = overlayGo.AddComponent<SpriteRenderer>();
+        _landingHintOverlay.sprite = _bodyRenderer.sprite;
+        _landingHintOverlay.sortingLayerID = _bodyRenderer.sortingLayerID;
+        _landingHintOverlay.sortingOrder = _bodyRenderer.sortingOrder + 1;
+        _landingHintOverlay.color = Color.clear;
+
+        var unlit = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+        if (unlit != null)
+            _landingHintOverlay.sharedMaterial = new Material(unlit);
+        else
+            _landingHintOverlay.sharedMaterial = _bodyRenderer.sharedMaterial;
+    }
+
+    void UpdateLandingAngleTint()
+    {
+        if (!showLandingAngleHint)
+            return;
+
+        EnsureLandingHintOverlay();
+        if (_landingHintOverlay == null)
+            return;
+
+        bool showUnsafe = !_onTrampoline
+            && !_fallen
+            && HeightAbovePlaySurface <= landingHintMaxHeight
+            && Mathf.Abs(AngleFromUpright()) > maxLandingAngle;
+
+        _landingHintOverlay.sprite = _bodyRenderer.sprite;
+        _landingHintOverlay.flipX = _bodyRenderer.flipX;
+        _landingHintOverlay.flipY = _bodyRenderer.flipY;
+        _landingHintOverlay.color = showUnsafe
+            ? new Color(0f, 0f, 0f, unsafeLandingOverlayAlpha)
+            : Color.clear;
+    }
+
     public void HandleTrampolineBounce(float bounceForce)
     {
         if (_fallen) return;
@@ -293,7 +437,6 @@ public class PlayerController : MonoBehaviour
         if (!clean)
         {
             GameplayEventBus.RaiseTrampolineLanding(landing);
-            GameplayEventBus.RaiseFallenOffSurface();
             FallOff();
             return;
         }
@@ -305,7 +448,11 @@ public class PlayerController : MonoBehaviour
 
         LastLandingFlips = flips;
         _airSpinDegrees = 0f;
-        _lifetimeFlips += flips;
+        if (CrazyPanDogUIController.GameStarted && !AttractMode)
+        {
+            _lifetimeFlips += flips;
+            GameplayEventBus.RaiseTotalLifetimeFlips(_lifetimeFlips);
+        }
 
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
         _rb.AddForce(Vector2.up * bounceForce * multiplier, ForceMode2D.Impulse);
@@ -314,7 +461,6 @@ public class PlayerController : MonoBehaviour
         if (_rb.linearVelocity.y > velocityCap)
             _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, velocityCap);
 
-        GameplayEventBus.RaiseTotalLifetimeFlips(_lifetimeFlips);
         GameplayEventBus.RaiseTrampolineLanding(landing);
         if (perfect) GameplayEventBus.RaisePerfectLanding();
     }
@@ -323,6 +469,7 @@ public class PlayerController : MonoBehaviour
     {
         _fallen = true;
         _flipHeld = false;
+        _externalFlipHeld = false;
         _touchAccepted = false;
         _airSpinDegrees = 0f;
         ClearHighAlt();
@@ -333,5 +480,10 @@ public class PlayerController : MonoBehaviour
         float dir = Random.value < 0.5f ? -1f : 1f;
         _rb.AddForce(new Vector2(4f * dir, 2f), ForceMode2D.Impulse);
         _rb.AddTorque(8f * dir, ForceMode2D.Impulse);
+
+        if (GameplayEventBus.PartnersActive)
+            GameplayEventBus.RaisePlayerFell(this);
+        else
+            GameplayEventBus.RaiseFallenOffSurface();
     }
 }
