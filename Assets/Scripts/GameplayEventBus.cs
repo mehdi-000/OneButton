@@ -15,6 +15,13 @@ public static class GameplayEventBus
     public static event Action ApexReached;
     public static event Action<PlayerController> PlayerFell;
     public static event Action<int> PartnersUnlocked;
+    public static event Action GameWon;
+
+    // Per-run stats (reset on TransitionToGame in the UI controller).
+    public static int RunFlips;
+    public static int RunPerfectFlips;
+    public static float RunStartTime;
+    public static float RunFinishTime;
 
     public static float HighAltitudeThresholdWorldY { get; set; } = 8f;
     public static bool PartnersActive { get; private set; }
@@ -92,6 +99,17 @@ public static class GameplayEventBus
 
     public static void RaisePartnersUnlocked(int partnerCount) =>
         PartnersUnlocked?.Invoke(partnerCount);
+
+    public static void RaiseGameWon() =>
+        GameWon?.Invoke();
+
+    public static void ResetRunStats()
+    {
+        RunFlips = 0;
+        RunPerfectFlips = 0;
+        RunStartTime = 0f;
+        RunFinishTime = 0f;
+    }
 }
 
 [Serializable]
