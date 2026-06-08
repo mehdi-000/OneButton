@@ -1819,6 +1819,7 @@ GameObject:
   m_Component:
   - component: {fileID: 487779090}
   - component: {fileID: 487779089}
+  - component: {fileID: 487779091}
   m_Layer: 0
   m_Name: 140804-nabu-heringsmoewe-frank-derer8_0
   m_TagString: Untagged
@@ -1894,12 +1895,60 @@ Transform:
   m_GameObject: {fileID: 487779088}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -21.6185, y: 76.4845, z: 0}
+  m_LocalPosition: {x: -314.2, y: 85.3, z: 0}
   m_LocalScale: {x: 2.8457503, y: 2.8640246, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &487779091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 487779088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c9346784daa618688a7da8165b179bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  duration: 50
+  range: {x: 40, y: 60}
+  offset: 400
+  curve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 5
+      outSlope: 5
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.2
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &493732620
 GameObject:
   m_ObjectHideFlags: 0
@@ -3488,6 +3537,7 @@ GameObject:
   m_Component:
   - component: {fileID: 803150556}
   - component: {fileID: 803150555}
+  - component: {fileID: 803150557}
   m_Layer: 0
   m_Name: 140804-nabu-heringsmoewe-frank-derer8_0 (1)
   m_TagString: Untagged
@@ -3563,12 +3613,60 @@ Transform:
   m_GameObject: {fileID: 803150554}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: 18.5653, y: 90.219, z: 0}
+  m_LocalPosition: {x: 262.5, y: 117.2, z: 0}
   m_LocalScale: {x: 2.684633, y: 2.5257947, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &803150557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 803150554}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c9346784daa618688a7da8165b179bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::horizontal_movement
+  duration: 1
+  range: {x: 35, y: 50}
+  offset: 100
+  curve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 3.3333333
+      outSlope: 3.3333333
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.3
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1001 &813622532
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4872,9 +4970,6 @@ MonoBehaviour:
     height: 0.5
   playSurfaceCollider: {fileID: 1482935165}
   playerBodyCollider: {fileID: 1204538550}
-  showLandingAngleHint: 1
-  landingHintMaxHeight: 10
-  unsafeLandingOverlayAlpha: 0.45
 --- !u!114 &1204538554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4890,7 +4985,6 @@ MonoBehaviour:
   startLaunchVelocity: 8
   delayBeforeFlipPress: 0.35
   flipHoldDuration: 1
-  delayBeforeNextCycle: 2
 --- !u!1 &1236596156
 GameObject:
   m_ObjectHideFlags: 0
@@ -6512,6 +6606,14 @@ MonoBehaviour:
   gameOverScorePunchSeconds: 0.22
   gameOverRankRevealDelay: 0.12
   gameOverRankRevealSeconds: 0.35
+  gameOverShowDelaySeconds: 1
+  useFiniteEndMode: 0
+  goalHeightMeters: 1000
+  endOverlayFadeSeconds: 0.6
+  endTitleHoldSeconds: 3.5
+  endTitleFadeOutSeconds: 0.45
+  endCreditsScrollSeconds: 18
+  endStatsRevealFadeSeconds: 0.45
 --- !u!114 &1598337225
 MonoBehaviour:
   m_ObjectHideFlags: 0
