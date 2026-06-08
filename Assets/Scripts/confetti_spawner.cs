@@ -8,6 +8,8 @@ public class confetti_spawner : MonoBehaviour
     {
         if (particles == null)
             particles = GetComponent<ParticleSystem>();
+        if (particles != null)
+            particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
     void OnEnable()
@@ -22,6 +24,7 @@ public class confetti_spawner : MonoBehaviour
 
     void PlayParticles(TrampolineLandingInfo info)
     {
+        if (!CrazyPanDogUIController.GameStarted) return;
         if (info.WasPerfectLanding && info.CompletedFullFlips >= 1)
             particles.Play();
     }

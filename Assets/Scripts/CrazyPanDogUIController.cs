@@ -58,6 +58,19 @@ public class CrazyPanDogUIController : MonoBehaviour
     [SerializeField] float gameOverScorePunchSeconds = 0.22f;
     [SerializeField] float gameOverRankRevealDelay = 0.12f;
     [SerializeField] float gameOverRankRevealSeconds = 0.35f;
+    [Tooltip("Delay (seconds) between FallenOffSurface and the overlay appearing.")]
+    [SerializeField] float gameOverShowDelaySeconds = 1.0f;
+
+    [Header("Finite End Mode (GameWithEnd scene)")]
+    [Tooltip("When true: progress shown as percent, win condition active, scoring switches to time-to-goal.")]
+    [SerializeField] bool useFiniteEndMode;
+    [SerializeField] float goalHeightMeters = 1000f;
+    [SerializeField] float endOverlayFadeSeconds = 0.6f;
+    [Tooltip("How long the 'YOU MADE IT!' title sits on screen before credits start.")]
+    [SerializeField] float endTitleHoldSeconds = 3.5f;
+    [SerializeField] float endTitleFadeOutSeconds = 0.45f;
+    [SerializeField] float endCreditsScrollSeconds = 18f;
+    [SerializeField] float endStatsRevealFadeSeconds = 0.45f;
 
     UIDocument _ui;
     UIDocument _worldFlipComboUi;
@@ -86,13 +99,19 @@ public class CrazyPanDogUIController : MonoBehaviour
     VisualElement _gameOverOverlay;
     VisualElement _gameOverScoreBlock;
     Label _gameOverScore;
+    Label _gameOverScoreSub;
+    VisualElement _gameOverAngleRow;
+    Label _gameOverAngleValue;
+    Label _gameOverAngleSafe;
     VisualElement _gameOverRankBadge;
     Label _gameOverRankCaption;
     VisualElement _gameOverRankValueRow;
     Label _gameOverRankNumber;
     Label _gameOverRankFallback;
     VisualElement _gameOverLeaderboardList;
+    VisualElement _gameOverExtraStats;
     Button _btnGameOverRestart;
+    VisualElement _cheeringCrowd;
 
     // game hud
     VisualElement _gameHud;
@@ -112,6 +131,8 @@ public class CrazyPanDogUIController : MonoBehaviour
     Coroutine _punchRoutine;
     Coroutine _milestoneRoutine;
     Coroutine _gameOverRevealRoutine;
+    Coroutine _gameOverDelayRoutine;
+    Coroutine _endFlowRoutine;
 
     int _lastLiveFlipFloor = -1;
     int _totalFlips;
@@ -119,6 +140,30 @@ public class CrazyPanDogUIController : MonoBehaviour
     bool _overlayOpen;
     bool _gameOverOpen;
     bool _minimapVisible;
+
+    // finite-mode end UI
+    VisualElement _gameEndOverlay;
+    VisualElement _gameEndTitleBlock;
+    VisualElement _gameEndCredits;
+    VisualElement _gameEndCreditsScroller;
+    Label _endStatFlips;
+    Label _endStatPerfect;
+    Label _endNewBest;
+
+    // finite-mode per-run stats
+    int _runPerfectFlips;
+    int _runPerfectStreak;
+    float _runStartTime;
+    bool _gameWon;
+    bool _isFiniteWinReveal;
+    float _winRunTime;
+    int _winFlips;
+    int _winPerfect;
+    int _winRank;
+    EndFlowPhase _endPhase = EndFlowPhase.None;
+    bool _perfectStreakMedalAwarded;
+
+    enum EndFlowPhase { None, Title, Credits, Actions }
     float _flipComboOffsetBlend;
     bool _flipComboLensClassApplied;
     float _lensOffsetReferenceZoomRatio = 1f;
@@ -161,6 +206,8 @@ public class CrazyPanDogUIController : MonoBehaviour
     {
         _ui = GetComponent<UIDocument>();
         EnsureWorldFlipComboUi();
+        if (useFiniteEndMode)
+            NewgroundsApi.Init();
     }
 
     void OnEnable()
@@ -171,6 +218,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         GameplayEventBus.FlipHoldStarted += OnFlipHoldStarted;
         GameplayEventBus.FallenOffSurface += OnFallenOffSurface;
         GameplayEventBus.PartnersUnlocked += OnPartnersUnlocked;
+        GameplayEventBus.PerfectLanding += OnPerfectLandingForRun;
 
         CacheAllRefs();
         SetupStartScreen();
@@ -184,6 +232,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         GameplayEventBus.FlipHoldStarted -= OnFlipHoldStarted;
         GameplayEventBus.FallenOffSurface -= OnFallenOffSurface;
         GameplayEventBus.PartnersUnlocked -= OnPartnersUnlocked;
+        GameplayEventBus.PerfectLanding -= OnPerfectLandingForRun;
 
         UnbindButtons();
         InputBlocked = false;
@@ -200,9 +249,26 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void Update()
     {
-        if (!_gameOverOpen || Keyboard.current == null) return;
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-            OnGameOverRestartClicked();
+        if (Keyboard.current == null) return;
+        bool spacePressed = Keyboard.current.spaceKey.wasPressedThisFrame;
+
+        // Credits phase: space skips to the win reveal.
+        if (_endPhase == EndFlowPhase.Credits)
+        {
+            if (spacePressed)
+                SkipCreditsToReveal();
+            return;
+        }
+
+        // Title phase auto-advances; ignore input.
+        if (_endPhase == EndFlowPhase.Title) return;
+
+        // Win reveal (Actions phase) or game-over screen: space restarts.
+        if (_endPhase == EndFlowPhase.Actions || _gameOverOpen)
+        {
+            if (spacePressed)
+                OnGameOverRestartClicked();
+        }
     }
 
     void LateUpdate()
@@ -252,8 +318,23 @@ public class CrazyPanDogUIController : MonoBehaviour
         _gameOverRankValueRow = root.Q<VisualElement>("game-over-rank-value-row");
         _gameOverRankNumber = root.Q<Label>("game-over-rank-number");
         _gameOverRankFallback = root.Q<Label>("game-over-rank-fallback");
+        _gameOverScoreSub = root.Q<Label>("game-over-score-sub");
+        _gameOverAngleRow = root.Q<VisualElement>("game-over-angle-row");
+        _gameOverAngleValue = root.Q<Label>("game-over-angle-value");
+        _gameOverAngleSafe = root.Q<Label>("game-over-angle-safe");
         _gameOverLeaderboardList = root.Q<VisualElement>("game-over-leaderboard-list");
+        _gameOverExtraStats = root.Q<VisualElement>("game-over-extra-stats");
         _btnGameOverRestart = root.Q<Button>("btn-game-over-restart");
+
+        _cheeringCrowd = root.Q<VisualElement>("cheering-crowd");
+
+        _gameEndOverlay = root.Q<VisualElement>("game-end-overlay");
+        _gameEndTitleBlock = root.Q<VisualElement>("game-end-title-block");
+        _gameEndCredits = root.Q<VisualElement>("game-end-credits");
+        _gameEndCreditsScroller = root.Q<VisualElement>("game-end-credits-scroller");
+        _endStatFlips = root.Q<Label>("end-stat-flips");
+        _endStatPerfect = root.Q<Label>("end-stat-perfect");
+        _endNewBest = root.Q<Label>("end-new-best");
 
         _gameHud = root.Q<VisualElement>("game-hud");
         _altitudeWrap = root.Q<VisualElement>("altitude-hud-wrap");
@@ -322,6 +403,8 @@ public class CrazyPanDogUIController : MonoBehaviour
         GameStarted = false;
         _overlayOpen = false;
         _gameOverOpen = false;
+        _gameWon = false;
+        _endPhase = EndFlowPhase.None;
         InputBlocked = false;
 
         MigrateLeaderboardMetricIfNeeded();
@@ -332,6 +415,13 @@ public class CrazyPanDogUIController : MonoBehaviour
         HideElement(_optionsOverlay);
         HideElement(_leaderboardOverlay);
         HideElement(_gameOverOverlay);
+        HideElement(_gameEndOverlay);
+        HideElement(_gameEndCredits);
+        HideElement(_gameOverExtraStats);
+        HideElement(_gameOverAngleRow);
+        if (_endNewBest != null) HideElement(_endNewBest);
+        _isFiniteWinReveal = false;
+        if (_gameOverScoreSub != null) _gameOverScoreSub.text = "MAX HEIGHT";
 
         UnbindButtons();
         BindButtons();
@@ -427,8 +517,23 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (_promptBlink != null) StopCoroutine(_promptBlink);
 
         GameplayEventBus.ResetPeakHeight();
+        GameplayEventBus.ResetRunStats();
         if (playerController != null)
             playerController.ResetSessionScores();
+
+        _runPerfectFlips = 0;
+        _runPerfectStreak = 0;
+        _perfectStreakMedalAwarded = false;
+        _runStartTime = Time.unscaledTime;
+        GameplayEventBus.RunStartTime = _runStartTime;
+        _gameWon = false;
+        _isFiniteWinReveal = false;
+        _endPhase = EndFlowPhase.None;
+        if (_gameOverScoreSub != null) _gameOverScoreSub.text = "MAX HEIGHT";
+        HideElement(_gameOverExtraStats);
+        HideElement(_gameOverAngleRow);
+        if (_endNewBest != null) HideElement(_endNewBest);
+        if (_cheeringCrowd != null) ShowElement(_cheeringCrowd);
 
         HideElement(_startScreen);
         HideElement(_optionsOverlay);
@@ -478,6 +583,7 @@ public class CrazyPanDogUIController : MonoBehaviour
     void OnFallenOffSurface()
     {
         if (!_gameStarted || _gameOverOpen) return;
+        if (_gameWon) return; // won runs never fall through to game-over
 
         _gameOverOpen = true;
         _overlayOpen = true;
@@ -486,12 +592,38 @@ public class CrazyPanDogUIController : MonoBehaviour
         HideElement(_optionsOverlay);
         HideElement(_leaderboardOverlay);
 
+        if (_gameOverDelayRoutine != null) StopCoroutine(_gameOverDelayRoutine);
+        _gameOverDelayRoutine = StartCoroutine(GameOverShowRoutine());
+    }
+
+    IEnumerator GameOverShowRoutine()
+    {
+        float delay = Mathf.Max(0f, gameOverShowDelaySeconds);
+        if (delay > 0f)
+            yield return new WaitForSecondsRealtime(delay);
+
         float peak = GameplayEventBus.PeakHeightAbovePlaySurface;
-        int runScore = HeightScoreFromPeak(peak);
-        int rank = SaveScoreToLeaderboard(runScore);
+        int runScore = useFiniteEndMode
+            ? PercentFromHeight(peak)            // finite mode: display % of goal
+            : HeightScoreFromPeak(peak);
+        int rank = useFiniteEndMode ? 0 : SaveScoreToLeaderboard(runScore);
         string playerName = PlayerPrefs.GetString("PlayerName", "Player");
 
-        PopulateLeaderboard(_gameOverLeaderboardList, playerName, rank, aboveCount: 2, belowCount: 2);
+        if (useFiniteEndMode)
+        {
+            if (_gameOverLeaderboardList != null)
+                _gameOverLeaderboardList.AddToClassList("hidden");
+            if (_gameOverScoreSub != null) _gameOverScoreSub.text = "PROGRESS";
+            HideElement(_gameOverExtraStats);
+            if (_endNewBest != null) HideElement(_endNewBest);
+        }
+        else
+        {
+            PopulateLeaderboard(_gameOverLeaderboardList, playerName, rank, aboveCount: 2, belowCount: 2);
+        }
+
+        PopulateAngleRow();
+
         ResetGameOverPresentation();
 
         ShowElement(_gameOverOverlay);
@@ -501,7 +633,13 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (_gameOverRevealRoutine != null)
             StopCoroutine(_gameOverRevealRoutine);
         _gameOverRevealRoutine = StartCoroutine(GameOverRevealRoutine(peak, runScore, rank));
+        _gameOverDelayRoutine = null;
     }
+
+    int PercentFromHeight(float meters) =>
+        goalHeightMeters > 0f
+            ? Mathf.Clamp(Mathf.RoundToInt(meters / goalHeightMeters * 100f), 0, 100)
+            : 0;
 
     void ResetGameOverPresentation()
     {
@@ -534,24 +672,31 @@ public class CrazyPanDogUIController : MonoBehaviour
             _gameOverLeaderboardList.style.opacity = 0.35f;
     }
 
-    IEnumerator GameOverRevealRoutine(float targetHeight, int runScore, int rank)
+    IEnumerator GameOverRevealRoutine(float targetValue, int runScore, int rank)
     {
         float countDur = Mathf.Max(0.01f, gameOverScoreCountSeconds);
         float punchDur = Mathf.Max(0.01f, gameOverScorePunchSeconds);
-        float target = Mathf.Max(0f, targetHeight);
+        float target = Mathf.Max(0f, targetValue);
+        bool finite = useFiniteEndMode;
+        bool isWin = _isFiniteWinReveal;
+        int finitePct = (finite && !isWin) ? PercentFromHeight(target) : 0;
 
-        // Count up max height with ease-out while scaling in.
+        // Count up the headline number with ease-out while scaling in.
         float t = 0f;
         while (t < countDur)
         {
             t += Time.unscaledDeltaTime;
             float u = Mathf.Clamp01(t / countDur);
             float eased = 1f - Mathf.Pow(1f - u, 3f);
-            float shown = target * eased;
 
             if (_gameOverScore != null)
             {
-                _gameOverScore.text = $"{shown:F1}";
+                string txt;
+                if (isWin) txt = FormatRunTime(target * eased);
+                else if (finite) txt = $"{Mathf.RoundToInt(finitePct * eased)}%";
+                else txt = $"{target * eased:F1}";
+                _gameOverScore.text = txt;
+
                 float s = Mathf.Lerp(0.45f, 1.08f, eased);
                 _gameOverScore.style.scale = new Scale(Vector3.one * s);
                 _gameOverScore.style.opacity = Mathf.Lerp(0f, 1f, Mathf.Min(1f, u * 2.5f));
@@ -564,7 +709,11 @@ public class CrazyPanDogUIController : MonoBehaviour
 
         if (_gameOverScore != null)
         {
-            _gameOverScore.text = $"{target:F1}";
+            string txt;
+            if (isWin) txt = FormatRunTime(target);
+            else if (finite) txt = $"{finitePct}%";
+            else txt = $"{target:F1}";
+            _gameOverScore.text = txt;
             _gameOverScore.style.opacity = 1f;
         }
 
@@ -597,6 +746,14 @@ public class CrazyPanDogUIController : MonoBehaviour
 
         if (gameOverRankRevealDelay > 0f)
             yield return new WaitForSecondsRealtime(gameOverRankRevealDelay);
+
+        // Finite-mode FALL has no leaderboard (only wins enter the time leaderboard).
+        // Finite-mode WIN gets the full reveal (rank + leaderboard + extra stats).
+        if (useFiniteEndMode && !_isFiniteWinReveal)
+        {
+            _gameOverRevealRoutine = null;
+            yield break;
+        }
 
         ConfigureGameOverRankBadge(runScore, rank);
         ShowElement(_gameOverRankBadge);
@@ -644,6 +801,13 @@ public class CrazyPanDogUIController : MonoBehaviour
     void ConfigureGameOverRankBadge(int runScore, int rank)
     {
         if (_gameOverRankBadge == null) return;
+
+        // Finite-mode FALL: hide the rank badge — only wins enter the time leaderboard.
+        if (useFiniteEndMode && !_isFiniteWinReveal)
+        {
+            HideElement(_gameOverRankBadge);
+            return;
+        }
 
         if (runScore <= 0)
         {
@@ -759,6 +923,11 @@ public class CrazyPanDogUIController : MonoBehaviour
         int belowCount = 0)
     {
         if (list == null) return;
+        if (useFiniteEndMode)
+        {
+            PopulateTimeLeaderboard(list, highlightPlayerName, centerRank, aboveCount, belowCount);
+            return;
+        }
         list.Clear();
 
         int count = PlayerPrefs.GetInt("LB_Count", 0);
@@ -932,7 +1101,24 @@ public class CrazyPanDogUIController : MonoBehaviour
         }
 
         if (_altitudeWrap != null && _altitudeLabel != null)
-            _altitudeLabel.text = $"{heightAboveSurface:F1} m";
+        {
+            if (useFiniteEndMode && goalHeightMeters > 0f)
+            {
+                int pct = Mathf.RoundToInt(Mathf.Clamp01(heightAboveSurface / goalHeightMeters) * 100f);
+                _altitudeLabel.text = $"{pct}%";
+            }
+            else
+            {
+                _altitudeLabel.text = $"{heightAboveSurface:F1} m";
+            }
+        }
+
+        // Finite-mode win detection.
+        if (useFiniteEndMode && _gameStarted && !_gameWon &&
+            heightAboveSurface >= goalHeightMeters)
+        {
+            TriggerGameWon();
+        }
 
         if (_minimapChrome != null)
         {
@@ -1321,6 +1507,10 @@ public class CrazyPanDogUIController : MonoBehaviour
     {
         if (!_gameStarted) return;
 
+        // Finite-mode perfect-streak: a clean-but-not-perfect landing breaks the chain.
+        if (useFiniteEndMode && info.WasCleanLanding && !info.WasPerfectLanding)
+            _runPerfectStreak = 0;
+
         VisualElement root = ComboRootOrRoot();
         if (root == null) return;
         if (!info.WasCleanLanding) return;
@@ -1409,6 +1599,343 @@ public class CrazyPanDogUIController : MonoBehaviour
             yield return null;
         }
         el.RemoveFromHierarchy();
+    }
+
+    // ───────── finite-mode win flow ─────────
+
+    void OnPerfectLandingForRun()
+    {
+        if (!_gameStarted || _gameWon) return;
+
+        _runPerfectFlips++;
+        _runPerfectStreak++;
+        GameplayEventBus.RunPerfectFlips = _runPerfectFlips;
+
+        if (useFiniteEndMode && !_perfectStreakMedalAwarded && _runPerfectStreak >= 10)
+        {
+            _perfectStreakMedalAwarded = true;
+            NewgroundsApi.UnlockPerfectStreakX10();
+        }
+    }
+
+    void TriggerGameWon()
+    {
+        if (_gameWon) return;
+        _gameWon = true;
+
+        float runTime = Mathf.Max(0f, Time.unscaledTime - _runStartTime);
+        int rank = SaveTimeToLeaderboard(runTime, _totalFlips, _runPerfectFlips);
+
+        _winRunTime = runTime;
+        _winFlips = _totalFlips;
+        _winPerfect = _runPerfectFlips;
+        _winRank = rank;
+
+        GameplayEventBus.RunFinishTime = runTime;
+        GameplayEventBus.RunFlips = _totalFlips;
+        GameplayEventBus.RunPerfectFlips = _runPerfectFlips;
+        GameplayEventBus.RaiseGameWon();
+
+        SubmitWinToNewgrounds(runTime);
+
+        // Cut HUD-driven input; only the win-flow screens accept input from here.
+        InputBlocked = true;
+        if (playerController != null)
+            playerController.SetFlipInputManaged(true);
+
+        if (_gameOverDelayRoutine != null) StopCoroutine(_gameOverDelayRoutine);
+        if (_gameOverRevealRoutine != null) StopCoroutine(_gameOverRevealRoutine);
+        HideElement(_gameOverOverlay);
+        _gameOverOpen = false;
+
+        if (_endFlowRoutine != null) StopCoroutine(_endFlowRoutine);
+        _endFlowRoutine = StartCoroutine(EndFlowRoutine());
+    }
+
+    void SubmitWinToNewgrounds(float runTime)
+    {
+        NewgroundsApi.SubmitTime(runTime);
+        NewgroundsApi.UnlockReachTop();
+        if (runTime < 60f)
+            NewgroundsApi.UnlockSpeedrunUnder60();
+        // All-perfect: every clean landing this run was perfect (no streak break happened).
+        if (_runPerfectFlips > 0 && _runPerfectStreak == _runPerfectFlips)
+            NewgroundsApi.UnlockAllPerfect();
+    }
+
+    IEnumerator EndFlowRoutine()
+    {
+        // ── Phase 1: title block over comic ──
+        _endPhase = EndFlowPhase.Title;
+
+        HideElement(_gameHud);
+        HideElement(_gameOverOverlay);
+        HideElement(_optionsOverlay);
+        HideElement(_leaderboardOverlay);
+        HideElement(_cheeringCrowd);
+
+        ShowElement(_gameEndOverlay);
+        if (_gameEndOverlay != null) _gameEndOverlay.pickingMode = PickingMode.Position;
+        HideElement(_gameEndCredits);
+        if (_gameEndTitleBlock != null)
+        {
+            ShowElement(_gameEndTitleBlock);
+            _gameEndTitleBlock.style.opacity = 0f;
+        }
+
+        // fade overlay + title in
+        float fadeIn = Mathf.Max(0.01f, endOverlayFadeSeconds);
+        float t = 0f;
+        while (t < fadeIn)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / fadeIn);
+            if (_gameEndOverlay != null) _gameEndOverlay.style.opacity = u;
+            if (_gameEndTitleBlock != null) _gameEndTitleBlock.style.opacity = u;
+            yield return null;
+        }
+        if (_gameEndOverlay != null) _gameEndOverlay.style.opacity = 1f;
+        if (_gameEndTitleBlock != null) _gameEndTitleBlock.style.opacity = 1f;
+
+        if (endTitleHoldSeconds > 0f)
+            yield return new WaitForSecondsRealtime(endTitleHoldSeconds);
+
+        // fade title out
+        float titleOut = Mathf.Max(0.01f, endTitleFadeOutSeconds);
+        t = 0f;
+        while (t < titleOut)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / titleOut);
+            if (_gameEndTitleBlock != null) _gameEndTitleBlock.style.opacity = 1f - u;
+            yield return null;
+        }
+        HideElement(_gameEndTitleBlock);
+
+        // ── Phase 2: credits scroll ──
+        _endPhase = EndFlowPhase.Credits;
+        ShowElement(_gameEndCredits);
+        if (_gameEndCreditsScroller != null)
+            _gameEndCreditsScroller.style.top = new Length(100f, LengthUnit.Percent);
+
+        float scrollDur = Mathf.Max(1f, endCreditsScrollSeconds);
+        t = 0f;
+        while (t < scrollDur)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / scrollDur);
+            if (_gameEndCreditsScroller != null)
+            {
+                float topPct = Mathf.Lerp(100f, -120f, u);
+                _gameEndCreditsScroller.style.top = new Length(topPct, LengthUnit.Percent);
+            }
+            yield return null;
+        }
+        HideElement(_gameEndCredits);
+
+        // ── Phase 3: reveal the game-over card as a win screen ──
+        StartFiniteWinReveal();
+        _endFlowRoutine = null;
+    }
+
+    void SkipCreditsToReveal()
+    {
+        if (_endFlowRoutine != null) StopCoroutine(_endFlowRoutine);
+        _endFlowRoutine = null;
+        HideElement(_gameEndCredits);
+        HideElement(_gameEndTitleBlock);
+        StartFiniteWinReveal();
+    }
+
+    void StartFiniteWinReveal()
+    {
+        _endPhase = EndFlowPhase.Actions;
+        _isFiniteWinReveal = true;
+
+        HideElement(_cheeringCrowd);
+        HideElement(_gameOverAngleRow);
+
+        if (_gameOverScoreSub != null) _gameOverScoreSub.text = "TIME";
+        if (_gameOverExtraStats != null) ShowElement(_gameOverExtraStats);
+        if (_endStatFlips != null) _endStatFlips.text = _winFlips.ToString();
+        if (_endStatPerfect != null) _endStatPerfect.text = _winPerfect.ToString();
+        if (_endNewBest != null)
+        {
+            if (_winRank == 1) ShowElement(_endNewBest);
+            else HideElement(_endNewBest);
+        }
+
+        string playerName = PlayerPrefs.GetString("PlayerName", "Player");
+        PopulateLeaderboard(_gameOverLeaderboardList, playerName, _winRank, aboveCount: 2, belowCount: 2);
+
+        ResetGameOverPresentation();
+
+        ShowElement(_gameOverOverlay);
+        if (_gameOverOverlay != null)
+        {
+            _gameOverOverlay.pickingMode = PickingMode.Position;
+            _gameOverOverlay.BringToFront(); // raise above game-end-overlay's comic layer
+        }
+        _gameOverOpen = true;
+        InputBlocked = true;
+
+        if (_gameOverRevealRoutine != null) StopCoroutine(_gameOverRevealRoutine);
+        // dummy runScore=1 so the "no height recorded" fallback branch isn't taken.
+        _gameOverRevealRoutine = StartCoroutine(GameOverRevealRoutine(_winRunTime, 1, _winRank));
+    }
+
+    static string FormatRunTime(float seconds)
+    {
+        seconds = Mathf.Max(0f, seconds);
+        int m = (int)(seconds / 60f);
+        float rest = seconds - m * 60f;
+        return $"{m}:{rest:00.00}";
+    }
+
+    void PopulateAngleRow()
+    {
+        if (_gameOverAngleRow == null) return;
+        if (_isFiniteWinReveal || playerController == null)
+        {
+            HideElement(_gameOverAngleRow);
+            return;
+        }
+
+        float angle = playerController.LandingAngleDegreesFromUpright;
+        float safe = playerController.maxLandingAngle;
+
+        if (_gameOverAngleValue != null)
+            _gameOverAngleValue.text = $"{Mathf.RoundToInt(Mathf.Abs(angle))}°";
+        if (_gameOverAngleSafe != null)
+            _gameOverAngleSafe.text = $"SAFE ±{Mathf.RoundToInt(safe)}°";
+
+        ShowElement(_gameOverAngleRow);
+    }
+
+    // ───────── time-based leaderboard (finite mode) ─────────
+
+    /// <returns>1-based rank if the time made the top 10, otherwise 0.</returns>
+    int SaveTimeToLeaderboard(float runTimeSeconds, int flips, int perfectFlips)
+    {
+        int cs = Mathf.Clamp(Mathf.RoundToInt(Mathf.Max(0f, runTimeSeconds) * 100f), 1, int.MaxValue);
+        string playerName = PlayerPrefs.GetString("PlayerName", "Player");
+
+        int count = PlayerPrefs.GetInt("LBT_Count", 0);
+        const int maxEntries = 10;
+
+        int[] times = new int[count];
+        string[] names = new string[count];
+        int[] flipsArr = new int[count];
+        int[] perfectArr = new int[count];
+        for (int i = 0; i < count; i++)
+        {
+            times[i] = PlayerPrefs.GetInt($"LBT_Time_{i}", int.MaxValue);
+            names[i] = PlayerPrefs.GetString($"LBT_Name_{i}", "Player");
+            flipsArr[i] = PlayerPrefs.GetInt($"LBT_Flips_{i}", 0);
+            perfectArr[i] = PlayerPrefs.GetInt($"LBT_Perfect_{i}", 0);
+        }
+
+        int insertIdx = count;
+        for (int i = 0; i < count; i++)
+            if (cs < times[i]) { insertIdx = i; break; }
+
+        if (insertIdx >= maxEntries) return 0;
+
+        int newCount = Mathf.Min(count + 1, maxEntries);
+        PlayerPrefs.SetInt("LBT_Count", newCount);
+
+        for (int i = newCount - 1; i > insertIdx; i--)
+        {
+            int prevT = (i - 1 < count) ? times[i - 1] : int.MaxValue;
+            string prevN = (i - 1 < count) ? names[i - 1] : "Player";
+            int prevF = (i - 1 < count) ? flipsArr[i - 1] : 0;
+            int prevP = (i - 1 < count) ? perfectArr[i - 1] : 0;
+            PlayerPrefs.SetInt($"LBT_Time_{i}", prevT);
+            PlayerPrefs.SetString($"LBT_Name_{i}", prevN);
+            PlayerPrefs.SetInt($"LBT_Flips_{i}", prevF);
+            PlayerPrefs.SetInt($"LBT_Perfect_{i}", prevP);
+        }
+
+        PlayerPrefs.SetInt($"LBT_Time_{insertIdx}", cs);
+        PlayerPrefs.SetString($"LBT_Name_{insertIdx}", playerName);
+        PlayerPrefs.SetInt($"LBT_Flips_{insertIdx}", flips);
+        PlayerPrefs.SetInt($"LBT_Perfect_{insertIdx}", perfectFlips);
+        PlayerPrefs.Save();
+
+        return insertIdx + 1;
+    }
+
+    static string FormatTimeScore(int centiseconds)
+    {
+        float s = centiseconds / 100f;
+        int m = (int)(s / 60f);
+        float rest = s - m * 60f;
+        return $"{m}:{rest:00.00}";
+    }
+
+    void PopulateTimeLeaderboard(VisualElement list, string highlightPlayerName, int centerRank, int aboveCount, int belowCount)
+    {
+        list.Clear();
+
+        int count = PlayerPrefs.GetInt("LBT_Count", 0);
+        if (count == 0)
+        {
+            var empty = new Label("No times yet — reach 1000m!");
+            empty.style.color = new Color(0.7f, 0.7f, 0.8f);
+            empty.style.fontSize = 16;
+            empty.style.unityTextAlign = TextAnchor.MiddleCenter;
+            empty.style.marginTop = 16;
+            list.Add(empty);
+            return;
+        }
+
+        int maxShown = Mathf.Min(count, 10);
+        int startIndex = 0;
+        int endIndex = maxShown - 1;
+
+        if (aboveCount > 0 || belowCount > 0)
+        {
+            if (centerRank > 0)
+            {
+                int playerIndex = centerRank - 1;
+                startIndex = Mathf.Max(0, playerIndex - aboveCount);
+                endIndex = Mathf.Min(maxShown - 1, playerIndex + belowCount);
+            }
+            else
+            {
+                endIndex = Mathf.Min(maxShown, 5) - 1;
+            }
+        }
+
+        for (int i = startIndex; i <= endIndex; i++)
+        {
+            int cs = PlayerPrefs.GetInt($"LBT_Time_{i}", int.MaxValue);
+            string entryName = PlayerPrefs.GetString($"LBT_Name_{i}", "Player");
+
+            var row = new VisualElement();
+            row.AddToClassList("leaderboard-row");
+            if (i < 3) row.AddToClassList("leaderboard-row-top");
+
+            bool isCurrentRun = centerRank > 0 && i + 1 == centerRank;
+            bool isNameMatch = !string.IsNullOrEmpty(highlightPlayerName) &&
+                string.Equals(entryName, highlightPlayerName, System.StringComparison.OrdinalIgnoreCase);
+            if (isCurrentRun || (centerRank == 0 && isNameMatch))
+                row.AddToClassList("leaderboard-row-you");
+
+            var rankLabel = new Label($"#{i + 1}");
+            rankLabel.AddToClassList("leaderboard-rank");
+
+            var nameLabel = new Label(entryName);
+            nameLabel.AddToClassList("leaderboard-name");
+
+            var sc = new Label(FormatTimeScore(cs));
+            sc.AddToClassList("leaderboard-score");
+
+            row.Add(rankLabel);
+            row.Add(nameLabel);
+            row.Add(sc);
+            list.Add(row);
+        }
     }
 
     // ───────── helpers ─────────

@@ -49,12 +49,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] Collider2D playSurfaceCollider;
     [SerializeField] Collider2D playerBodyCollider;
 
-    [Header("Landing Angle Hint")]
-    [SerializeField] bool showLandingAngleHint = true;
-    [SerializeField] float landingHintMaxHeight = 10f;
-    [Range(0f, 1f)]
-    [SerializeField] float unsafeLandingOverlayAlpha = 0.45f;
-
     Rigidbody2D _rb;
     float _defaultGravity;
     InputAction _flipAction;
@@ -66,8 +60,6 @@ public class PlayerController : MonoBehaviour
     float _baselineY, _peakY;
     bool _highAltActive;
     int _lifetimeFlips;
-    SpriteRenderer _bodyRenderer;
-    SpriteRenderer _landingHintOverlay;
 
     public int LastLandingFlips { get; private set; }
     public float LandingAngleDegreesFromUpright => AngleFromUpright();
@@ -226,8 +218,6 @@ public class PlayerController : MonoBehaviour
                 ProgressTowardNextFlip = Mathf.Clamp01(progress),
             });
         }
-
-        UpdateLandingAngleTint();
     }
 
     void ApplyApexHang()
@@ -353,66 +343,6 @@ public class PlayerController : MonoBehaviour
         return z > 180f ? z - 360f : z;
     }
 
-    void CacheBodyRenderer()
-    {
-        if (_bodyRenderer != null) return;
-
-        var renderers = GetComponentsInChildren<SpriteRenderer>(true);
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            var renderer = renderers[i];
-            if (!renderer.enabled || renderer.GetComponentInParent<Camera>() != null)
-                continue;
-
-            _bodyRenderer = renderer;
-            return;
-        }
-    }
-
-    void EnsureLandingHintOverlay()
-    {
-        CacheBodyRenderer();
-        if (_bodyRenderer == null || _landingHintOverlay != null)
-            return;
-
-        var overlayGo = new GameObject("LandingHintOverlay");
-        overlayGo.transform.SetParent(_bodyRenderer.transform, false);
-
-        _landingHintOverlay = overlayGo.AddComponent<SpriteRenderer>();
-        _landingHintOverlay.sprite = _bodyRenderer.sprite;
-        _landingHintOverlay.sortingLayerID = _bodyRenderer.sortingLayerID;
-        _landingHintOverlay.sortingOrder = _bodyRenderer.sortingOrder + 1;
-        _landingHintOverlay.color = Color.clear;
-
-        var unlit = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
-        if (unlit != null)
-            _landingHintOverlay.sharedMaterial = new Material(unlit);
-        else
-            _landingHintOverlay.sharedMaterial = _bodyRenderer.sharedMaterial;
-    }
-
-    void UpdateLandingAngleTint()
-    {
-        if (!showLandingAngleHint)
-            return;
-
-        EnsureLandingHintOverlay();
-        if (_landingHintOverlay == null)
-            return;
-
-        bool showUnsafe = !_onTrampoline
-            && !_fallen
-            && HeightAbovePlaySurface <= landingHintMaxHeight
-            && Mathf.Abs(AngleFromUpright()) > maxLandingAngle;
-
-        _landingHintOverlay.sprite = _bodyRenderer.sprite;
-        _landingHintOverlay.flipX = _bodyRenderer.flipX;
-        _landingHintOverlay.flipY = _bodyRenderer.flipY;
-        _landingHintOverlay.color = showUnsafe
-            ? new Color(0f, 0f, 0f, unsafeLandingOverlayAlpha)
-            : Color.clear;
-    }
-
     public void HandleTrampolineBounce(float bounceForce)
     {
         if (_fallen) return;
@@ -441,10 +371,16 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        int capped = Mathf.Min(flips, maxFlipsForBonus);
-        float multiplier = 1f + capped * bounceBonusPerFlip;
-        if (perfect)
-            multiplier *= perfectLandingBounceMultiplier;
+        float multiplier = 1f;
+        float velocityCap = maxBounceSpeed;
+        if (!AttractMode)
+        {
+            int capped = Mathf.Min(flips, maxFlipsForBonus);
+            multiplier = 1f + capped * bounceBonusPerFlip;
+            if (perfect)
+                multiplier *= perfectLandingBounceMultiplier;
+            velocityCap += landing.JumpHeight * bounceSpeedPerJumpHeight;
+        }
 
         LastLandingFlips = flips;
         _airSpinDegrees = 0f;
@@ -457,9 +393,10 @@ public class PlayerController : MonoBehaviour
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 0f);
         _rb.AddForce(Vector2.up * bounceForce * multiplier, ForceMode2D.Impulse);
 
-        float velocityCap = maxBounceSpeed + landing.JumpHeight * bounceSpeedPerJumpHeight;
         if (_rb.linearVelocity.y > velocityCap)
             _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, velocityCap);
+        if (AttractMode)
+            _rb.angularVelocity = 0f;
 
         GameplayEventBus.RaiseTrampolineLanding(landing);
         if (perfect) GameplayEventBus.RaisePerfectLanding();
@@ -474,12 +411,10 @@ public class PlayerController : MonoBehaviour
         _airSpinDegrees = 0f;
         ClearHighAlt();
 
-        if (freezeHorizontalPosition)
-            _rb.constraints &= ~RigidbodyConstraints2D.FreezePositionX;
-
-        float dir = Random.value < 0.5f ? -1f : 1f;
-        _rb.AddForce(new Vector2(4f * dir, 2f), ForceMode2D.Impulse);
-        _rb.AddTorque(8f * dir, ForceMode2D.Impulse);
+        // Freeze the body at the failure pose so the player can see the bad angle.
+        _rb.linearVelocity = Vector2.zero;
+        _rb.angularVelocity = 0f;
+        _rb.bodyType = RigidbodyType2D.Kinematic;
 
         if (GameplayEventBus.PartnersActive)
             GameplayEventBus.RaisePlayerFell(this);
