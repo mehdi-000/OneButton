@@ -5,15 +5,14 @@ using Random=UnityEngine.Random;
 
 public class horizontal_movement : MonoBehaviour
 {
-    [SerializeField] public float duration = 1.0f;
-    [SerializeField] public Vector2 range;
-    [SerializeField] public float offset = 100.0f;
+    [SerializeField] public Vector2 durationRange;
+    //[SerializeField] public float offset = 100.0f;
     [SerializeField] public AnimationCurve curve;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        transform.DOLocalMoveX(transform.position.x * -1.0f,Random.Range(range.x,range.y))
+        transform.DOLocalMoveX(transform.position.x * -1.0f,Random.Range(durationRange.x,durationRange.y))
         .SetEase(curve)
         .SetLoops(-1, LoopType.Restart);
     }
