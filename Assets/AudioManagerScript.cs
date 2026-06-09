@@ -14,6 +14,8 @@ public class AudioManagerScript : MonoBehaviour
     [SerializeField] AudioSource[] musicLayers;
     [SerializeField] AudioSource[] cheerSound;
     [SerializeField] AudioSource[] milestoneSFX;
+    [SerializeField] AudioSource winSFX;
+    private float flipSfxPitchValue = 1;
 
 
     private int currentTrackNum;
@@ -31,6 +33,7 @@ public class AudioManagerScript : MonoBehaviour
     {
         GameplayEventBus.TrampolineLanding += OnTrampolineLanding;
         GameplayEventBus.AirborneFlipProgress += OnAirborneFlipProgress;
+        GameplayEventBus.GameWon += GameWonSFX;
     }
 
     void OnDisable()
@@ -45,9 +48,24 @@ public class AudioManagerScript : MonoBehaviour
         
     }
 
+    void GameWonSFX()
+    {
+        winSFX.Play();
+        Debug.Log("Test-Audio");
+        //Invoke("StopAllMusic", 0.1f);
+    }
+
+    void StopAllMusic()
+    {
+        musicLayers[0].Stop();
+        musicLayers[1].Stop();
+        musicLayers[2].Stop();
+        musicLayers[3].Stop();
+    }
 
     void OnTrampolineLanding(TrampolineLandingInfo info)
     {
+        flipSfxPitchValue = 1;
         if (info.WasCleanLanding)
         {
             if(info.CompletedFullFlips < 5)
@@ -59,6 +77,7 @@ public class AudioManagerScript : MonoBehaviour
             {
                 bounceLowClip.Play();
                 ChangeMusic(1);
+                cheerSound[0].Play();
                 cheerSound[1].Play();
             }
             else if(info.CompletedFullFlips < 30)
@@ -102,7 +121,7 @@ public class AudioManagerScript : MonoBehaviour
         else
         {
             gameOverSFX.Play();
-            musicLayers[currentTrackNum].Play();
+            musicLayers[currentTrackNum].Stop();
 
         }
         
@@ -137,9 +156,11 @@ public class AudioManagerScript : MonoBehaviour
 
         int n = info.VisibleFullFlipCount;
         bool incremented = n > _lastLiveFlipFloor && (_lastLiveFlipFloor >= 0 || n >= 1);
-        if (incremented)
+        if (incremented){
             FlipSFX.Play();
-
+            flipSfxPitchValue = flipSfxPitchValue + 0.03f;
+            FlipSFX.pitch = flipSfxPitchValue;
+        }
         if(info.VisibleFullFlipCount == 5)
         {
             milestoneSFX[0].Play();
