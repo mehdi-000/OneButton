@@ -73,8 +73,6 @@ public class SoundManager : MonoBehaviour
     [SerializeField] AudioSource backgroundAmbienceSource;
 
     int _lastLiveFlipFloor = -1;
-    float _lastMasterSfxVolume = -1f;
-    float _lastMasterMusicVolume = -1f;
     float _lastFizzleProximityVolume = -1f;
     bool _gameOver;
 
@@ -103,7 +101,6 @@ public class SoundManager : MonoBehaviour
 
     void Start()
     {
-        SyncMasterVolumes(force: true);
         StartMusicIfNeeded();
     }
 
@@ -125,28 +122,8 @@ public class SoundManager : MonoBehaviour
 
     void Update()
     {
-        SyncMasterVolumes();
         UpdateFizzleByHeight();
     }
-
-    void SyncMasterVolumes(bool force = false)
-    {
-        float sfx = MasterSfxVolume;
-        float musicVol = MasterMusicVolume;
-        if (!force
-            && Mathf.Approximately(sfx, _lastMasterSfxVolume)
-            && Mathf.Approximately(musicVol, _lastMasterMusicVolume))
-            return;
-
-        _lastMasterSfxVolume = sfx;
-        _lastMasterMusicVolume = musicVol;
-
-        if (musicSource != null)
-            musicSource.volume = musicVol * music.volume;
-    }
-
-    static float MasterSfxVolume => PlayerPrefs.GetFloat("SfxVolume", 80f) / 100f;
-    static float MasterMusicVolume => PlayerPrefs.GetFloat("MusicVolume", 80f) / 100f;
 
     void StartMusicIfNeeded()
     {
@@ -156,7 +133,7 @@ public class SoundManager : MonoBehaviour
         musicSource.clip = musicClip;
         musicSource.loop = true;
         musicSource.pitch = music.pitch;
-        musicSource.volume = MasterMusicVolume * music.volume;
+        musicSource.volume = music.volume;
         if (!musicSource.isPlaying)
             musicSource.Play();
     }
@@ -244,7 +221,7 @@ public class SoundManager : MonoBehaviour
             return;
 
         _lastFizzleProximityVolume = proximityVolume;
-        loopSource.volume = MasterSfxVolume * proximityVolume;
+        loopSource.volume = proximityVolume;
     }
 
     void StopFizzle()
@@ -259,7 +236,7 @@ public class SoundManager : MonoBehaviour
             return;
 
         source.pitch = pitch;
-        source.PlayOneShot(clip, MasterSfxVolume * volumeScale);
+        source.PlayOneShot(clip, volumeScale);
         source.pitch = 1f;
     }
 }

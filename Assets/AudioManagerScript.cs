@@ -1,10 +1,10 @@
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.UI;
-using UnityEngine.Audio;
+using UnityEngine.Serialization;
 
 public class AudioManagerScript : MonoBehaviour
 {
+    const string SoundVolumePref = "SoundVolume";
+
     [SerializeField] AudioSource bounceLowClip;
     [SerializeField] AudioSource bounceHighClip;
 
@@ -18,22 +18,40 @@ public class AudioManagerScript : MonoBehaviour
     [SerializeField] AudioSource[] cheerSound;
     [SerializeField] AudioSource[] milestoneSFX;
 
-    [Header("UI Slider")]
-    [SerializeField] AudioMixer sfxMixer;
-    [SerializeField] AudioMixer musicMixer;
-    [SerializeField] Slider sfxSlider;
-    [SerializeField] Slider musicSlider;
-
+    [Header("Sound Volume")]
+    [SerializeField]
+    [FormerlySerializedAs("musicMixer")]
+    [FormerlySerializedAs("soundMixer")]
+    UnityEngine.Audio.AudioMixer soundMixer;
 
     private int currentTrackNum;
 
     int _lastLiveFlipFloor = -1;
 
-    
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         musicLayers[0].Play();
+        ApplySoundVolume(GetSavedSoundVolume());
+    }
+
+    public static float GetSavedSoundVolume()
+    {
+        if (PlayerPrefs.HasKey(SoundVolumePref))
+            return PlayerPrefs.GetFloat(SoundVolumePref, 80f);
+
+        return PlayerPrefs.GetFloat("MusicVolume", 80f);
+    }
+
+    public static void SetSoundVolume(float percent)
+    {
+        percent = Mathf.Clamp(percent, 0f, 100f);
+        PlayerPrefs.SetFloat(SoundVolumePref, percent);
+        ApplySoundVolume(percent);
+    }
+
+    public static void ApplySoundVolume(float percent)
+    {
+        AudioListener.volume = percent / 100f;
     }
 
     void OnEnable()
@@ -47,14 +65,6 @@ public class AudioManagerScript : MonoBehaviour
         GameplayEventBus.TrampolineLanding -= OnTrampolineLanding;
         GameplayEventBus.AirborneFlipProgress -= OnAirborneFlipProgress;
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        //sfxMixer.SetFloat("sfxMixer", sfxSlider.value);
-        //musicMixer.SetFloat("musicMixer", sfxSlider.value);
-    }
-
 
     void OnTrampolineLanding(TrampolineLandingInfo info)
     {
