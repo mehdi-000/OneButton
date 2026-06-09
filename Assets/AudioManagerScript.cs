@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class AudioManagerScript : MonoBehaviour
 {
@@ -14,6 +17,12 @@ public class AudioManagerScript : MonoBehaviour
     [SerializeField] AudioSource[] musicLayers;
     [SerializeField] AudioSource[] cheerSound;
     [SerializeField] AudioSource[] milestoneSFX;
+
+    [Header("UI Slider")]
+    [SerializeField] AudioMixer sfxMixer;
+    [SerializeField] AudioMixer musicMixer;
+    [SerializeField] Slider sfxSlider;
+    [SerializeField] Slider musicSlider;
 
 
     private int currentTrackNum;
@@ -42,7 +51,8 @@ public class AudioManagerScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        //sfxMixer.SetFloat("sfxMixer", sfxSlider.value);
+        //musicMixer.SetFloat("musicMixer", sfxSlider.value);
     }
 
 
@@ -102,7 +112,11 @@ public class AudioManagerScript : MonoBehaviour
         else
         {
             gameOverSFX.Play();
-            musicLayers[currentTrackNum].Play();
+            for(int i = 0; i<4; i++)
+            {
+                musicLayers[i].Stop();
+            }
+            
 
         }
         
