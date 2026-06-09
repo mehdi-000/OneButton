@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: f8e7f265d5d7d0b44b62673bfa7a19a1
+guid: c6f420ba3fb67cd9d81502eccb93ec1c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4292291492623566199
-    second: Game-Background_Wall_0
+      213: 6286665164452896435
+    second: Asset_Ein-Ufo_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Game-Background_Wall_0
+      name: Asset_Ein-Ufo_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 1800
-        height: 2415
+        x: 328
+        y: 176
+        width: 2215
+        height: 1443
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 775424afe58419b30800000000000000
-      internalID: 4292291492623566199
+      spriteID: 3be990da8a8be3750800000000000000
+      internalID: 6286665164452896435
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Game-Background_Wall_0: 4292291492623566199
+      Asset_Ein-Ufo_0: 6286665164452896435
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
