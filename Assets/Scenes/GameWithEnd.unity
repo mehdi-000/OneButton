@@ -410,7 +410,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 157906589}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &157906594
 Camera:
   m_ObjectHideFlags: 0
@@ -5211,10 +5211,15 @@ MonoBehaviour:
   useFiniteEndMode: 1
   goalHeightMeters: 50
   endOverlayFadeSeconds: 0.6
-  endTitleHoldSeconds: 0.6
-  endTitleFadeOutSeconds: 0.45
-  endCreditsScrollSeconds: 22
+  endUfoBoardDelaySeconds: 0.4
+  endUfoBoardSeconds: 6
+  endUfoBoardScaleEnd: 0.2
+  endUfoBoardRiseMeters: 40
+  endCreditsHoldSeconds: 22
   endStatsRevealFadeSeconds: 0.45
+  endSequencePlayerRoot: {fileID: 0}
+  ufoBeamTarget: {fileID: 0}
+  ufoBeamWorldOffset: {x: 0, y: 0, z: 0}
 --- !u!114 &1598337225
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5426,6 +5431,7 @@ MonoBehaviour:
   - {fileID: 130110399}
   - {fileID: 329918837}
   - {fileID: 431762595}
+  soundMixer: {fileID: 0}
 --- !u!4 &1658797918
 Transform:
   m_ObjectHideFlags: 0

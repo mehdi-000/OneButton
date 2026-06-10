@@ -1627,7 +1627,6 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (playerController != null)
         {
             playerController.SetFlipInputManaged(true);
-            playerController.FreezeForCutscene();
         }
 
         if (_worldFlipComboTransform != null)
