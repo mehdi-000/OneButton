@@ -66,11 +66,15 @@ public class CrazyPanDogUIController : MonoBehaviour
     [SerializeField] bool useFiniteEndMode;
     [SerializeField] float goalHeightMeters = 1000f;
     [SerializeField] float endOverlayFadeSeconds = 0.6f;
-    [Tooltip("How long the 'YOU MADE IT!' title sits on screen before credits start.")]
-    [SerializeField] float endTitleHoldSeconds = 3.5f;
-    [SerializeField] float endTitleFadeOutSeconds = 0.45f;
-    [SerializeField] float endCreditsScrollSeconds = 18f;
+    [SerializeField] float endUfoBoardDelaySeconds = 0.4f;
+    [SerializeField] float endUfoBoardSeconds = 6f;
+    [SerializeField] float endUfoBoardScaleEnd = 0.2f;
+    [SerializeField] float endUfoBoardRiseMeters = 40f;
+    [SerializeField] float endCreditsHoldSeconds = 22f;
     [SerializeField] float endStatsRevealFadeSeconds = 0.45f;
+    [SerializeField] Transform endSequencePlayerRoot;
+    [SerializeField] Transform ufoBeamTarget;
+    [SerializeField] Vector3 ufoBeamWorldOffset = Vector3.zero;
 
     UIDocument _ui;
     UIDocument _worldFlipComboUi;
@@ -89,8 +93,7 @@ public class CrazyPanDogUIController : MonoBehaviour
     // overlays
     VisualElement _optionsOverlay;
     VisualElement _leaderboardOverlay;
-    Slider _sliderMusic;
-    Slider _sliderSfx;
+    Slider _sliderSound;
     TextField _inputPlayerName;
     Button _btnOptionsClose;
     Button _btnLeaderboardClose;
@@ -143,9 +146,7 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     // finite-mode end UI
     VisualElement _gameEndOverlay;
-    VisualElement _gameEndTitleBlock;
     VisualElement _gameEndCredits;
-    VisualElement _gameEndCreditsScroller;
     Label _endStatFlips;
     Label _endStatPerfect;
     Label _endNewBest;
@@ -163,7 +164,7 @@ public class CrazyPanDogUIController : MonoBehaviour
     EndFlowPhase _endPhase = EndFlowPhase.None;
     bool _perfectStreakMedalAwarded;
 
-    enum EndFlowPhase { None, Title, Credits, Actions }
+    enum EndFlowPhase { None, UfoBoarding, Credits, Actions }
     float _flipComboOffsetBlend;
     bool _flipComboLensClassApplied;
     float _lensOffsetReferenceZoomRatio = 1f;
@@ -252,6 +253,14 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (Keyboard.current == null) return;
         bool spacePressed = Keyboard.current.spaceKey.wasPressedThisFrame;
 
+        // UFO boarding: space skips straight to credits.
+        if (_endPhase == EndFlowPhase.UfoBoarding)
+        {
+            if (spacePressed)
+                SkipUfoBoardingToCredits();
+            return;
+        }
+
         // Credits phase: space skips to the win reveal.
         if (_endPhase == EndFlowPhase.Credits)
         {
@@ -260,8 +269,7 @@ public class CrazyPanDogUIController : MonoBehaviour
             return;
         }
 
-        // Title phase auto-advances; ignore input.
-        if (_endPhase == EndFlowPhase.Title) return;
+        if (_endPhase == EndFlowPhase.UfoBoarding) return;
 
         // Win reveal (Actions phase) or game-over screen: space restarts.
         if (_endPhase == EndFlowPhase.Actions || _gameOverOpen)
@@ -303,8 +311,7 @@ public class CrazyPanDogUIController : MonoBehaviour
 
         _optionsOverlay = root.Q<VisualElement>("options-overlay");
         _leaderboardOverlay = root.Q<VisualElement>("leaderboard-overlay");
-        _sliderMusic = root.Q<Slider>("slider-music");
-        _sliderSfx = root.Q<Slider>("slider-sfx");
+        _sliderSound = root.Q<Slider>("slider-sound");
         _inputPlayerName = root.Q<TextField>("input-player-name");
         _btnOptionsClose = root.Q<Button>("btn-options-close");
         _btnLeaderboardClose = root.Q<Button>("btn-leaderboard-close");
@@ -329,9 +336,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         _cheeringCrowd = root.Q<VisualElement>("cheering-crowd");
 
         _gameEndOverlay = root.Q<VisualElement>("game-end-overlay");
-        _gameEndTitleBlock = root.Q<VisualElement>("game-end-title-block");
         _gameEndCredits = root.Q<VisualElement>("game-end-credits");
-        _gameEndCreditsScroller = root.Q<VisualElement>("game-end-credits-scroller");
         _endStatFlips = root.Q<Label>("end-stat-flips");
         _endStatPerfect = root.Q<Label>("end-stat-perfect");
         _endNewBest = root.Q<Label>("end-new-best");
@@ -426,20 +431,12 @@ public class CrazyPanDogUIController : MonoBehaviour
         UnbindButtons();
         BindButtons();
 
-        if (_sliderMusic != null)
+        if (_sliderSound != null)
         {
-            float savedMusic = PlayerPrefs.GetFloat("MusicVolume", 80f);
-            _sliderMusic.value = savedMusic;
-            ApplyMusicVolume(savedMusic);
-            _sliderMusic.RegisterValueChangedCallback(OnMusicSliderChanged);
-        }
-
-        if (_sliderSfx != null)
-        {
-            float savedSfx = PlayerPrefs.GetFloat("SfxVolume", 80f);
-            _sliderSfx.value = savedSfx;
-            ApplySfxVolume(savedSfx);
-            _sliderSfx.RegisterValueChangedCallback(OnSfxSliderChanged);
+            float savedSound = AudioManagerScript.GetSavedSoundVolume();
+            _sliderSound.value = savedSound;
+            ApplySoundVolume(savedSound);
+            _sliderSound.RegisterValueChangedCallback(OnSoundSliderChanged);
         }
 
         if (_inputPlayerName != null)
@@ -494,8 +491,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (_btnLeaderboardClose != null) _btnLeaderboardClose.clicked -= OnLeaderboardCloseClicked;
         if (_btnGameOverRestart != null) _btnGameOverRestart.clicked -= OnGameOverRestartClicked;
 
-        if (_sliderMusic != null) _sliderMusic.UnregisterValueChangedCallback(OnMusicSliderChanged);
-        if (_sliderSfx != null) _sliderSfx.UnregisterValueChangedCallback(OnSfxSliderChanged);
+        if (_sliderSound != null) _sliderSound.UnregisterValueChangedCallback(OnSoundSliderChanged);
         if (_inputPlayerName != null) _inputPlayerName.UnregisterValueChangedCallback(OnPlayerNameChanged);
     }
 
@@ -873,16 +869,9 @@ public class CrazyPanDogUIController : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    void OnMusicSliderChanged(ChangeEvent<float> evt)
+    void OnSoundSliderChanged(ChangeEvent<float> evt)
     {
-        ApplyMusicVolume(evt.newValue);
-        PlayerPrefs.SetFloat("MusicVolume", evt.newValue);
-    }
-
-    void OnSfxSliderChanged(ChangeEvent<float> evt)
-    {
-        ApplySfxVolume(evt.newValue);
-        PlayerPrefs.SetFloat("SfxVolume", evt.newValue);
+        AudioManagerScript.SetSoundVolume(evt.newValue);
     }
 
     void OnPlayerNameChanged(ChangeEvent<string> evt)
@@ -892,14 +881,9 @@ public class CrazyPanDogUIController : MonoBehaviour
         RefreshProfileName();
     }
 
-    void ApplyMusicVolume(float val)
+    void ApplySoundVolume(float val)
     {
-        if (musicSource != null) musicSource.volume = val / 100f;
-    }
-
-    void ApplySfxVolume(float val)
-    {
-        if (sfxSource != null) sfxSource.volume = val / 100f;
+        AudioManagerScript.ApplySoundVolume(val);
     }
 
     // ───────── leaderboard ─────────
@@ -1641,7 +1625,14 @@ public class CrazyPanDogUIController : MonoBehaviour
         // Cut HUD-driven input; only the win-flow screens accept input from here.
         InputBlocked = true;
         if (playerController != null)
+        {
             playerController.SetFlipInputManaged(true);
+        }
+
+        if (_worldFlipComboTransform != null)
+            _worldFlipComboTransform.gameObject.SetActive(false);
+
+        ResolveEndSequenceRefs();
 
         if (_gameOverDelayRoutine != null) StopCoroutine(_gameOverDelayRoutine);
         if (_gameOverRevealRoutine != null) StopCoroutine(_gameOverRevealRoutine);
@@ -1663,27 +1654,87 @@ public class CrazyPanDogUIController : MonoBehaviour
             NewgroundsApi.UnlockAllPerfect();
     }
 
+    void ResolveEndSequenceRefs()
+    {
+        if (endSequencePlayerRoot == null && playerController != null)
+            endSequencePlayerRoot = playerController.PlayerRoot;
+
+        if (ufoBeamTarget == null)
+        {
+            var ufo = GameObject.Find("Ufo");
+            if (ufo != null)
+            {
+                var beam = ufo.transform.Find("Square");
+                ufoBeamTarget = beam != null ? beam : ufo.transform;
+            }
+        }
+    }
+
+    Vector3 GetUfoBoardTarget(Vector3 fromPosition)
+    {
+        float targetY = fromPosition.y + Mathf.Max(5f, endUfoBoardRiseMeters);
+        if (ufoBeamTarget != null)
+            targetY = Mathf.Max(targetY, ufoBeamTarget.position.y + ufoBeamWorldOffset.y);
+        return new Vector3(fromPosition.x, targetY, fromPosition.z);
+    }
+
+    IEnumerator PlayUfoBoardingAnimation()
+    {
+        if (endSequencePlayerRoot == null)
+            yield break;
+
+        Vector3 startPos = endSequencePlayerRoot.position;
+        Vector3 startScale = endSequencePlayerRoot.localScale;
+        Quaternion startRot = endSequencePlayerRoot.rotation;
+        float startY = startPos.y;
+        float targetY = GetUfoBoardTarget(startPos).y;
+        float dur = Mathf.Max(0.5f, endUfoBoardSeconds);
+
+        float t = 0f;
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / dur);
+            // Ease-in: slow start, accelerates upward into the beam like a suction pull.
+            float eased = u * u * u;
+            var pos = endSequencePlayerRoot.position;
+            pos.y = Mathf.Lerp(startY, targetY, eased);
+            endSequencePlayerRoot.position = pos;
+            float scale = Mathf.Lerp(1f, endUfoBoardScaleEnd, eased);
+            endSequencePlayerRoot.localScale = startScale * scale;
+            endSequencePlayerRoot.rotation = Quaternion.Slerp(startRot, Quaternion.identity, eased);
+            yield return null;
+        }
+    }
+
     IEnumerator EndFlowRoutine()
     {
-        // ── Phase 1: title block over comic ──
-        _endPhase = EndFlowPhase.Title;
-
         HideElement(_gameHud);
         HideElement(_gameOverOverlay);
         HideElement(_optionsOverlay);
         HideElement(_leaderboardOverlay);
         HideElement(_cheeringCrowd);
-
-        ShowElement(_gameEndOverlay);
-        if (_gameEndOverlay != null) _gameEndOverlay.pickingMode = PickingMode.Position;
+        HideElement(_gameEndOverlay);
         HideElement(_gameEndCredits);
-        if (_gameEndTitleBlock != null)
-        {
-            ShowElement(_gameEndTitleBlock);
-            _gameEndTitleBlock.style.opacity = 0f;
-        }
 
-        // fade overlay + title in
+        // Phase 1: pandog gets sucked into the UFO (world stays visible).
+        _endPhase = EndFlowPhase.UfoBoarding;
+        if (endUfoBoardDelaySeconds > 0f)
+            yield return new WaitForSecondsRealtime(endUfoBoardDelaySeconds);
+        yield return PlayUfoBoardingAnimation();
+
+        // Phase 2: credits screen.
+        _endPhase = EndFlowPhase.Credits;
+        ShowElement(_gameEndOverlay);
+        if (_gameEndOverlay != null)
+        {
+            _gameEndOverlay.pickingMode = PickingMode.Position;
+            _gameEndOverlay.style.opacity = 0f;
+        }
+        ShowElement(_gameEndCredits);
+        if (_gameEndCredits != null)
+            _gameEndCredits.style.opacity = 0f;
+
         float fadeIn = Mathf.Max(0.01f, endOverlayFadeSeconds);
         float t = 0f;
         while (t < fadeIn)
@@ -1691,49 +1742,52 @@ public class CrazyPanDogUIController : MonoBehaviour
             t += Time.unscaledDeltaTime;
             float u = Mathf.Clamp01(t / fadeIn);
             if (_gameEndOverlay != null) _gameEndOverlay.style.opacity = u;
-            if (_gameEndTitleBlock != null) _gameEndTitleBlock.style.opacity = u;
+            if (_gameEndCredits != null) _gameEndCredits.style.opacity = u;
             yield return null;
         }
         if (_gameEndOverlay != null) _gameEndOverlay.style.opacity = 1f;
-        if (_gameEndTitleBlock != null) _gameEndTitleBlock.style.opacity = 1f;
+        if (_gameEndCredits != null) _gameEndCredits.style.opacity = 1f;
 
-        if (endTitleHoldSeconds > 0f)
-            yield return new WaitForSecondsRealtime(endTitleHoldSeconds);
-
-        // fade title out
-        float titleOut = Mathf.Max(0.01f, endTitleFadeOutSeconds);
+        float holdDur = Mathf.Max(1f, endCreditsHoldSeconds);
         t = 0f;
-        while (t < titleOut)
+        while (t < holdDur)
         {
             t += Time.unscaledDeltaTime;
-            float u = Mathf.Clamp01(t / titleOut);
-            if (_gameEndTitleBlock != null) _gameEndTitleBlock.style.opacity = 1f - u;
             yield return null;
         }
-        HideElement(_gameEndTitleBlock);
 
-        // ── Phase 2: credits scroll ──
-        _endPhase = EndFlowPhase.Credits;
-        ShowElement(_gameEndCredits);
-        if (_gameEndCreditsScroller != null)
-            _gameEndCreditsScroller.style.top = new Length(100f, LengthUnit.Percent);
-
-        float scrollDur = Mathf.Max(1f, endCreditsScrollSeconds);
-        t = 0f;
-        while (t < scrollDur)
-        {
-            t += Time.unscaledDeltaTime;
-            float u = Mathf.Clamp01(t / scrollDur);
-            if (_gameEndCreditsScroller != null)
-            {
-                float topPct = Mathf.Lerp(100f, -120f, u);
-                _gameEndCreditsScroller.style.top = new Length(topPct, LengthUnit.Percent);
-            }
-            yield return null;
-        }
         HideElement(_gameEndCredits);
+        HideElement(_gameEndOverlay);
 
-        // ── Phase 3: reveal the game-over card as a win screen ──
+        StartFiniteWinReveal();
+        _endFlowRoutine = null;
+    }
+
+    void SkipUfoBoardingToCredits()
+    {
+        if (_endFlowRoutine != null) StopCoroutine(_endFlowRoutine);
+        _endFlowRoutine = null;
+        _endFlowRoutine = StartCoroutine(CreditsFromUfoSkipRoutine());
+    }
+
+    IEnumerator CreditsFromUfoSkipRoutine()
+    {
+        _endPhase = EndFlowPhase.Credits;
+        ShowElement(_gameEndOverlay);
+        ShowElement(_gameEndCredits);
+        if (_gameEndOverlay != null) _gameEndOverlay.style.opacity = 1f;
+        if (_gameEndCredits != null) _gameEndCredits.style.opacity = 1f;
+
+        float holdDur = Mathf.Max(1f, endCreditsHoldSeconds);
+        float t = 0f;
+        while (t < holdDur)
+        {
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        HideElement(_gameEndCredits);
+        HideElement(_gameEndOverlay);
         StartFiniteWinReveal();
         _endFlowRoutine = null;
     }
@@ -1743,7 +1797,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (_endFlowRoutine != null) StopCoroutine(_endFlowRoutine);
         _endFlowRoutine = null;
         HideElement(_gameEndCredits);
-        HideElement(_gameEndTitleBlock);
+        HideElement(_gameEndOverlay);
         StartFiniteWinReveal();
     }
 
