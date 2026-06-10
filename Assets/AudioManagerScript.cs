@@ -17,12 +17,18 @@ public class AudioManagerScript : MonoBehaviour
     [SerializeField] AudioSource[] musicLayers;
     [SerializeField] AudioSource[] cheerSound;
     [SerializeField] AudioSource[] milestoneSFX;
+    [SerializeField] AudioSource gameWonSFX;
 
     [Header("Sound Volume")]
     [SerializeField]
     [FormerlySerializedAs("musicMixer")]
     [FormerlySerializedAs("soundMixer")]
     UnityEngine.Audio.AudioMixer soundMixer;
+
+    [Header ("FlipSFX")]
+    public float pitchIncrease = 0.015f;
+
+
 
     private int currentTrackNum;
 
@@ -58,18 +64,26 @@ public class AudioManagerScript : MonoBehaviour
     {
         GameplayEventBus.TrampolineLanding += OnTrampolineLanding;
         GameplayEventBus.AirborneFlipProgress += OnAirborneFlipProgress;
+        GameplayEventBus.GameWon += PlayGameWonSFX;
     }
 
     void OnDisable()
     {
         GameplayEventBus.TrampolineLanding -= OnTrampolineLanding;
         GameplayEventBus.AirborneFlipProgress -= OnAirborneFlipProgress;
+        GameplayEventBus.GameWon -= PlayGameWonSFX;
+    }
+
+    void PlayGameWonSFX()
+    {
+        gameWonSFX.Play();
     }
 
     void OnTrampolineLanding(TrampolineLandingInfo info)
     {
         if (info.WasCleanLanding)
         {
+            FlipSFX.pitch = 1;
             if(info.CompletedFullFlips < 5)
             {
                 ChangeMusic(0);
@@ -162,7 +176,10 @@ public class AudioManagerScript : MonoBehaviour
         int n = info.VisibleFullFlipCount;
         bool incremented = n > _lastLiveFlipFloor && (_lastLiveFlipFloor >= 0 || n >= 1);
         if (incremented)
+        {
             FlipSFX.Play();
+            FlipSFX.pitch += pitchIncrease;
+        }
 
         if(info.VisibleFullFlipCount == 5)
         {
