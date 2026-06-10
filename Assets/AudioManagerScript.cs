@@ -158,7 +158,7 @@ public class AudioManagerScript : MonoBehaviour
         bool incremented = n > _lastLiveFlipFloor && (_lastLiveFlipFloor >= 0 || n >= 1);
         if (incremented){
             FlipSFX.Play();
-            flipSfxPitchValue = flipSfxPitchValue + 0.03f;
+            flipSfxPitchValue = flipSfxPitchValue + 0.015f;
             FlipSFX.pitch = flipSfxPitchValue;
         }
         if(info.VisibleFullFlipCount == 5)
