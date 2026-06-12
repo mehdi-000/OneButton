@@ -20,9 +20,12 @@ MonoBehaviour:
     rid: 1357017873323130881
   m_OverrideGlobalSceneList: 1
   m_Scenes:
-  - m_enabled: 1
+  - m_enabled: 0
     m_path: Assets/Scenes/CameraZoomsOut.unity
     m_guid: b9efd249dc52641d4ac2a473ef3cc1f5
+  - m_enabled: 1
+    m_path: Assets/Scenes/GameWithEnd.unity
+    m_guid: 363250d523be49cda81b267bd59d838b
   m_HasScriptingDefines: 0
   m_ScriptingDefines: []
   m_PlayerSettingsYaml:

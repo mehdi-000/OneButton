@@ -5127,7 +5127,7 @@ MonoBehaviour:
   gameOverRankRevealSeconds: 0.35
   gameOverShowDelaySeconds: 1
   useFiniteEndMode: 1
-  goalHeightMeters: 815
+  goalHeightMeters: 720
   endOverlayFadeSeconds: 0.6
   endUfoBoardDelaySeconds: 0.4
   endUfoBoardSeconds: 6
