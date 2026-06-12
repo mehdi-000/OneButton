@@ -1171,90 +1171,28 @@
     right: 0;
     top: 0;
     bottom: 0;
-    background-color: rgba(10, 6, 22, 0.78);
+    background-color: rgb(255, 255, 255);
+    background-image: url("project://database/Assets/Textures/Endscreen.png?fileID=2800000&guid=ea5b7dc9e46c64af0990bf9eb1c168ab&type=3");
+    -unity-background-scale-mode: scale-and-crop;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    padding-top: 14%;
     overflow: hidden;
 }
 
-.game-end-credits-scroller {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 100%;
-    flex-direction: column;
-    align-items: center;
-    flex-shrink: 0;
-    padding: 24px 6% 80px 6%;
-}
-
-.credits-title-wrap {
-    flex-direction: column;
-    align-items: center;
-    flex-shrink: 0;
-    margin-bottom: 22px;
-    overflow: visible;
-}
-
-.credits-section-title {
-    font-size: 16px;
+.end-message-title {
+    font-size: 48px;
     -unity-font-style: bold;
-    color: rgb(255, 200, 60);
-    letter-spacing: 8px;
+    color: rgb(128, 56, 158);
     -unity-text-align: middle-center;
-    margin-top: 18px;
-    margin-bottom: 14px;
-    white-space: normal;
-}
-
-.credits-spacer {
-    width: 60%;
-    height: 24px;
-    flex-shrink: 0;
-}
-
-.credits-row {
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 22px;
-    flex-shrink: 0;
-}
-
-.credits-name {
-    font-size: 26px;
-    -unity-font-style: bold;
-    color: rgb(255, 255, 255);
-    -unity-text-align: middle-center;
-    letter-spacing: 2px;
-    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
-    margin-bottom: 4px;
-    white-space: normal;
-}
-
-.credits-role {
-    font-size: 15px;
-    color: rgba(210, 220, 240, 0.75);
-    -unity-text-align: middle-center;
-    letter-spacing: 3px;
-    white-space: normal;
-}
-
-.credits-thanks {
-    font-size: 16px;
-    color: rgba(220, 230, 240, 0.8);
-    -unity-text-align: middle-center;
-    margin-bottom: 6px;
-    flex-shrink: 0;
-    white-space: normal;
-}
-
-.credits-footer {
-    font-size: 15px;
-    color: rgba(200, 210, 230, 0.55);
-    -unity-text-align: middle-center;
-    letter-spacing: 4px;
-    margin-top: 22px;
+    -unity-text-outline-width: 3px;
+    -unity-text-outline-color: rgb(52, 20, 70);
+    letter-spacing: 5px;
+    text-shadow: 0 5px 0 rgba(0, 0, 0, 0.25);
+    padding-left: 6%;
+    padding-right: 6%;
+    rotate: -3deg;
     white-space: normal;
 }
 

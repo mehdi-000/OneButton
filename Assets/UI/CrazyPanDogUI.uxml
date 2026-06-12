@@ -93,27 +93,7 @@
     </ui:VisualElement>
     <ui:VisualElement name="game-end-overlay" picking-mode="Ignore" class="overlay overlay-game-end hidden">
         <ui:VisualElement name="game-end-credits" picking-mode="Ignore" class="game-end-credits hidden">
-            <ui:VisualElement picking-mode="Ignore" class="credits-box">
-                <ui:Label text="You did it!" class="credits-headline"/>
-                <ui:Label text="Credits" class="credits-heading"/>
-                <ui:VisualElement picking-mode="Ignore" class="credits-row">
-                    <ui:Label text="David Paßberger" class="credits-name"/>
-                    <ui:Label text="Audio" class="credits-role"/>
-                </ui:VisualElement>
-                <ui:VisualElement picking-mode="Ignore" class="credits-row">
-                    <ui:Label text="Marlon Popp" class="credits-name"/>
-                    <ui:Label text="Art" class="credits-role"/>
-                </ui:VisualElement>
-                <ui:VisualElement picking-mode="Ignore" class="credits-row">
-                    <ui:Label text="Markus Meier" class="credits-name"/>
-                    <ui:Label text="Tech Art" class="credits-role"/>
-                </ui:VisualElement>
-                <ui:VisualElement picking-mode="Ignore" class="credits-row">
-                    <ui:Label text="Mehdi Popal" class="credits-name"/>
-                    <ui:Label text="Programming" class="credits-role"/>
-                </ui:VisualElement>
-                <ui:Label text="Special Thanks to our Playtesters!" class="credits-thanks-line"/>
-            </ui:VisualElement>
+            <ui:Label text="You made it back to your family!" class="end-message-title"/>
         </ui:VisualElement>
     </ui:VisualElement>
     <ui:VisualElement name="cheering-crowd" picking-mode="Ignore" class="cheering-crowd">
