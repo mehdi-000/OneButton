@@ -16,6 +16,7 @@ public static class GameplayEventBus
     public static event Action<PlayerController> PlayerFell;
     public static event Action<int> PartnersUnlocked;
     public static event Action GameWon;
+    public static event Action EndCreditsStarted;
 
     // Per-run stats (reset on TransitionToGame in the UI controller).
     public static int RunFlips;
@@ -102,6 +103,9 @@ public static class GameplayEventBus
 
     public static void RaiseGameWon() =>
         GameWon?.Invoke();
+
+    public static void RaiseEndCreditsStarted() =>
+        EndCreditsStarted?.Invoke();
 
     public static void ResetRunStats()
     {

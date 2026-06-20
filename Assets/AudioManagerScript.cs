@@ -27,6 +27,7 @@ public class AudioManagerScript : MonoBehaviour
 
     [Header ("FlipSFX")]
     public float pitchIncrease = 0.015f;
+    [Range(0f, 1f)] public float flipVolumeScale = 0.7f;
 
 
 
@@ -38,6 +39,8 @@ public class AudioManagerScript : MonoBehaviour
     {
         musicLayers[0].Play();
         ApplySoundVolume(GetSavedSoundVolume());
+        if (FlipSFX != null)
+            FlipSFX.volume *= flipVolumeScale;
     }
 
     public static float GetSavedSoundVolume()
@@ -65,6 +68,7 @@ public class AudioManagerScript : MonoBehaviour
         GameplayEventBus.TrampolineLanding += OnTrampolineLanding;
         GameplayEventBus.AirborneFlipProgress += OnAirborneFlipProgress;
         GameplayEventBus.GameWon += PlayGameWonSFX;
+        GameplayEventBus.EndCreditsStarted += StopMusic;
     }
 
     void OnDisable()
@@ -72,11 +76,18 @@ public class AudioManagerScript : MonoBehaviour
         GameplayEventBus.TrampolineLanding -= OnTrampolineLanding;
         GameplayEventBus.AirborneFlipProgress -= OnAirborneFlipProgress;
         GameplayEventBus.GameWon -= PlayGameWonSFX;
+        GameplayEventBus.EndCreditsStarted -= StopMusic;
     }
 
     void PlayGameWonSFX()
     {
         gameWonSFX.Play();
+    }
+
+    void StopMusic()
+    {
+        foreach (var layer in musicLayers)
+            if (layer != null) layer.Stop();
     }
 
     void OnTrampolineLanding(TrampolineLandingInfo info)
@@ -136,12 +147,7 @@ public class AudioManagerScript : MonoBehaviour
         else
         {
             gameOverSFX.Play();
-            for(int i = 0; i<4; i++)
-            {
-                musicLayers[i].Stop();
-            }
-            
-
+            StopMusic();
         }
         
     }

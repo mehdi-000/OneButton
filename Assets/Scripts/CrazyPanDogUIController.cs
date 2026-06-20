@@ -113,6 +113,8 @@ public class CrazyPanDogUIController : MonoBehaviour
     Label _gameOverRankFallback;
     VisualElement _gameOverLeaderboardList;
     VisualElement _gameOverExtraStats;
+    VisualElement _gameOverTimeRow;
+    Label _gameOverTimeValue;
     Button _btnGameOverRestart;
     VisualElement _cheeringCrowd;
 
@@ -143,6 +145,7 @@ public class CrazyPanDogUIController : MonoBehaviour
     bool _overlayOpen;
     bool _gameOverOpen;
     bool _minimapVisible;
+    bool _startScreenTouchHeld;
 
     // finite-mode end UI
     VisualElement _gameEndOverlay;
@@ -203,6 +206,30 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     public static bool GameStarted { get; private set; }
 
+    static CrazyPanDogUIController _instance;
+
+    /// <summary>
+    /// True when the pointer is over an interactive UI button. PlayerController
+    /// checks this so a tap-to-rotate anywhere on screen still leaves the
+    /// start-screen / game-over buttons clickable.
+    /// </summary>
+    public static bool PointerOverUiButton(Vector2 screenPos)
+    {
+        var inst = _instance;
+        if (inst == null || inst._ui == null) return false;
+        VisualElement root = inst._ui.rootVisualElement;
+        if (root == null || root.panel == null) return false;
+
+        Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(root.panel, screenPos);
+        VisualElement picked = root.panel.Pick(panelPos);
+        while (picked != null)
+        {
+            if (picked is Button) return true;
+            picked = picked.parent;
+        }
+        return false;
+    }
+
     void Awake()
     {
         _ui = GetComponent<UIDocument>();
@@ -213,6 +240,7 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void OnEnable()
     {
+        _instance = this;
         GameplayEventBus.TrampolineLanding += OnTrampolineLanding;
         GameplayEventBus.AirborneFlipProgress += OnAirborneFlipProgress;
         GameplayEventBus.TotalLifetimeFlipsChanged += OnTotalFlipsChanged;
@@ -237,6 +265,7 @@ public class CrazyPanDogUIController : MonoBehaviour
 
         UnbindButtons();
         InputBlocked = false;
+        if (_instance == this) _instance = null;
     }
 
     void Start()
@@ -250,32 +279,41 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void Update()
     {
-        if (Keyboard.current == null) return;
-        bool spacePressed = Keyboard.current.spaceKey.wasPressedThisFrame;
+        bool spacePressed = Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
+        var pointer = UnityEngine.InputSystem.Pointer.current; // disambiguate from System.Reflection.Pointer
+        bool tapped = pointer != null && pointer.press.wasPressedThisFrame;
 
-        // UFO boarding: space skips straight to credits.
+        // UFO boarding: space or tap skips straight to credits.
         if (_endPhase == EndFlowPhase.UfoBoarding)
         {
-            if (spacePressed)
+            if (spacePressed || tapped)
                 SkipUfoBoardingToCredits();
             return;
         }
 
-        // Credits phase: space skips to the win reveal.
+        // Credits phase: space or tap skips to the win reveal.
         if (_endPhase == EndFlowPhase.Credits)
         {
-            if (spacePressed)
+            if (spacePressed || tapped)
                 SkipCreditsToReveal();
             return;
         }
 
-        if (_endPhase == EndFlowPhase.UfoBoarding) return;
-
-        // Win reveal (Actions phase) or game-over screen: space restarts.
+        // Win reveal (Actions phase) or game-over screen: space restarts
+        // (touch uses the TRY AGAIN button to avoid accidental restarts).
         if (_endPhase == EndFlowPhase.Actions || _gameOverOpen)
         {
             if (spacePressed)
                 OnGameOverRestartClicked();
+        }
+
+        CheckManualButtonTaps();
+
+        // Release external flip held that was started by start-screen touch.
+        if (_startScreenTouchHeld && (pointer == null || !pointer.press.isPressed))
+        {
+            playerController?.SetExternalFlipHeld(false);
+            _startScreenTouchHeld = false;
         }
     }
 
@@ -289,9 +327,88 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     void OnFlipHoldStarted()
     {
-        if (_gameStarted || _overlayOpen)
+        if (_gameStarted || _overlayOpen) return;
+        StartCoroutine(TransitionToGameNextFrame());
+    }
+
+    IEnumerator TransitionToGameNextFrame()
+    {
+        yield return null;
+        if (!_gameStarted && !_overlayOpen)
+            TransitionToGame();
+    }
+
+    // Manual button hit-testing — replaces UI Toolkit button.clicked for mobile WebGL
+    // where canvas touch events may not reach the event pipeline reliably.
+    void CheckManualButtonTaps()
+    {
+        var ptr = UnityEngine.InputSystem.Pointer.current;
+        if (ptr == null || !ptr.press.wasPressedThisFrame) return;
+
+        var pos = ptr.position.ReadValue();
+
+        // Overlays open: handle their BACK buttons only.
+        if (_overlayOpen && !_gameOverOpen)
+        {
+            if (_optionsOverlay != null && !_optionsOverlay.ClassListContains("hidden")
+                && HitButton(_btnOptionsClose, pos))
+            { OnOptionsCloseClicked(); return; }
+            if (_leaderboardOverlay != null && !_leaderboardOverlay.ClassListContains("hidden")
+                && HitButton(_btnLeaderboardClose, pos))
+            { OnLeaderboardCloseClicked(); return; }
             return;
-        TransitionToGame();
+        }
+
+        // Game-over card: TRY AGAIN.
+        if (_gameOverOpen)
+        {
+            if (HitButton(_btnGameOverRestart, pos)) OnGameOverRestartClicked();
+            return;
+        }
+
+        // Start screen: use screen-space zones (panel-space hit-testing is unreliable on WebGL).
+        if (!_gameStarted)
+        {
+            float nx = pos.x / Screen.width;
+            float ny = pos.y / Screen.height; // Y=0 at bottom in Unity screen space
+
+            // Bottom bar: OPTIONS (left half) or SCORES (right half).
+            if (ny < 0.12f)
+            {
+                if (nx < 0.5f) OnOptionsClicked();
+                else OnLeaderboardClicked();
+                return;
+            }
+
+            // Profile chip: top-right corner.
+            if (ny > 0.88f && nx > 0.6f)
+            {
+                OnOptionsClicked();
+                return;
+            }
+
+            // Anywhere else starts the game.
+            TransitionToGame();
+            if (playerController != null)
+            {
+                playerController.SetExternalFlipHeld(true);
+                _startScreenTouchHeld = true;
+            }
+        }
+    }
+
+    bool HitButton(VisualElement el, Vector2 screenPos)
+    {
+        if (el == null || _ui == null) return false;
+        var panel = _ui.rootVisualElement.panel;
+        if (panel == null) return false;
+        var p = RuntimePanelUtils.ScreenToPanel(panel, screenPos);
+        var b = el.worldBound;
+        if (b.width <= 0 || b.height <= 0) return false;
+        float mx = Mathf.Max(b.width * 0.5f, 40f);
+        float my = Mathf.Max(b.height * 1.0f, 44f);
+        return p.x >= b.xMin - mx && p.x <= b.xMax + mx
+            && p.y >= b.yMin - my && p.y <= b.yMax + my;
     }
 
     // ───────── caching ─────────
@@ -331,6 +448,8 @@ public class CrazyPanDogUIController : MonoBehaviour
         _gameOverAngleSafe = root.Q<Label>("game-over-angle-safe");
         _gameOverLeaderboardList = root.Q<VisualElement>("game-over-leaderboard-list");
         _gameOverExtraStats = root.Q<VisualElement>("game-over-extra-stats");
+        _gameOverTimeRow = root.Q<VisualElement>("game-over-time-row");
+        _gameOverTimeValue = root.Q<Label>("game-over-time-value");
         _btnGameOverRestart = root.Q<Button>("btn-game-over-restart");
 
         _cheeringCrowd = root.Q<VisualElement>("cheering-crowd");
@@ -411,6 +530,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         _gameWon = false;
         _endPhase = EndFlowPhase.None;
         InputBlocked = false;
+        Time.timeScale = 1f; // restart reloads the scene but timeScale persists across loads
 
         MigrateLeaderboardMetricIfNeeded();
         RefreshProfileName();
@@ -423,6 +543,7 @@ public class CrazyPanDogUIController : MonoBehaviour
         HideElement(_gameEndOverlay);
         HideElement(_gameEndCredits);
         HideElement(_gameOverExtraStats);
+        HideElement(_gameOverTimeRow);
         HideElement(_gameOverAngleRow);
         if (_endNewBest != null) HideElement(_endNewBest);
         _isFiniteWinReveal = false;
@@ -525,8 +646,10 @@ public class CrazyPanDogUIController : MonoBehaviour
         _gameWon = false;
         _isFiniteWinReveal = false;
         _endPhase = EndFlowPhase.None;
+        Time.timeScale = 1f;
         if (_gameOverScoreSub != null) _gameOverScoreSub.text = "MAX HEIGHT";
         HideElement(_gameOverExtraStats);
+        HideElement(_gameOverTimeRow);
         HideElement(_gameOverAngleRow);
         if (_endNewBest != null) HideElement(_endNewBest);
         if (_cheeringCrowd != null) ShowElement(_cheeringCrowd);
@@ -585,6 +708,10 @@ public class CrazyPanDogUIController : MonoBehaviour
         _overlayOpen = true;
         InputBlocked = true;
 
+        // Freeze the falling world so it stops moving behind the end screen.
+        // All end-screen UI animates on unscaled time, so it keeps running.
+        Time.timeScale = 0f;
+
         HideElement(_optionsOverlay);
         HideElement(_leaderboardOverlay);
 
@@ -594,6 +721,16 @@ public class CrazyPanDogUIController : MonoBehaviour
 
     IEnumerator GameOverShowRoutine()
     {
+        // Clear the in-game HUD immediately so it doesn't double up over the card.
+        HideElement(_gameHud);
+        _minimapVisible = false;
+        if (_minimapChrome != null) _minimapChrome.RemoveFromClassList("minimap-visible");
+        if (_worldFlipComboTransform != null) _worldFlipComboTransform.gameObject.SetActive(false);
+
+        // Elapsed run time captured at the moment of the fall (unscaled time keeps
+        // ticking through the frozen world).
+        float runTime = Mathf.Max(0f, Time.unscaledTime - _runStartTime);
+
         float delay = Mathf.Max(0f, gameOverShowDelaySeconds);
         if (delay > 0f)
             yield return new WaitForSecondsRealtime(delay);
@@ -612,9 +749,12 @@ public class CrazyPanDogUIController : MonoBehaviour
             if (_gameOverScoreSub != null) _gameOverScoreSub.text = "PROGRESS";
             HideElement(_gameOverExtraStats);
             if (_endNewBest != null) HideElement(_endNewBest);
+            if (_gameOverTimeValue != null) _gameOverTimeValue.text = FormatRunTime(runTime);
+            ShowElement(_gameOverTimeRow);
         }
         else
         {
+            HideElement(_gameOverTimeRow);
             PopulateLeaderboard(_gameOverLeaderboardList, playerName, rank, aboveCount: 2, belowCount: 2);
         }
 
@@ -1723,8 +1863,10 @@ public class CrazyPanDogUIController : MonoBehaviour
             yield return new WaitForSecondsRealtime(endUfoBoardDelaySeconds);
         yield return PlayUfoBoardingAnimation();
 
-        // Phase 2: credits screen.
+        // Phase 2: credits screen. Freeze the world now that boarding is done.
         _endPhase = EndFlowPhase.Credits;
+        Time.timeScale = 0f;
+        GameplayEventBus.RaiseEndCreditsStarted();
         ShowElement(_gameEndOverlay);
         if (_gameEndOverlay != null)
         {
@@ -1773,6 +1915,8 @@ public class CrazyPanDogUIController : MonoBehaviour
     IEnumerator CreditsFromUfoSkipRoutine()
     {
         _endPhase = EndFlowPhase.Credits;
+        Time.timeScale = 0f;
+        GameplayEventBus.RaiseEndCreditsStarted();
         ShowElement(_gameEndOverlay);
         ShowElement(_gameEndCredits);
         if (_gameEndOverlay != null) _gameEndOverlay.style.opacity = 1f;
@@ -1808,6 +1952,7 @@ public class CrazyPanDogUIController : MonoBehaviour
 
         HideElement(_cheeringCrowd);
         HideElement(_gameOverAngleRow);
+        HideElement(_gameOverTimeRow);
 
         if (_gameOverScoreSub != null) _gameOverScoreSub.text = "TIME";
         if (_gameOverExtraStats != null) ShowElement(_gameOverExtraStats);
@@ -1861,7 +2006,9 @@ public class CrazyPanDogUIController : MonoBehaviour
         if (_gameOverAngleValue != null)
             _gameOverAngleValue.text = $"{Mathf.RoundToInt(Mathf.Abs(angle))}°";
         if (_gameOverAngleSafe != null)
-            _gameOverAngleSafe.text = $"SAFE ±{Mathf.RoundToInt(safe)}°";
+            // Show "SAFE <=40"; the actual cap (maxLandingAngle = 41°) keeps a 1°
+            // forgiveness buffer so a landing shown as 40° never fails on rounding.
+            _gameOverAngleSafe.text = $"SAFE <={Mathf.RoundToInt(safe) - 1}°";
 
         ShowElement(_gameOverAngleRow);
     }

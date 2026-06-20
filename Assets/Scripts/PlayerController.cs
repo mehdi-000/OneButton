@@ -42,9 +42,6 @@ public class PlayerController : MonoBehaviour
     [Header("Movement")]
     public bool freezeHorizontalPosition = true;
 
-    [Header("Touch")]
-    public Rect centerTouchRect = new Rect(0.25f, 0.25f, 0.5f, 0.5f);
-
     [Header("Altitude Events")]
     [SerializeField] Collider2D playSurfaceCollider;
     [SerializeField] Collider2D playerBodyCollider;
@@ -291,8 +288,8 @@ public class PlayerController : MonoBehaviour
 
         if (ctx.control?.device is Pointer)
         {
-            var pos = Pointer.current?.position.ReadValue() ?? Vector2.zero;
-            if (!IsInCenterRect(pos)) { _touchAccepted = false; return; }
+            // Touch only active during gameplay; start-screen touch is handled by UIController.
+            if (!CrazyPanDogUIController.GameStarted) { _touchAccepted = false; return; }
             _touchAccepted = true;
         }
 
@@ -329,12 +326,6 @@ public class PlayerController : MonoBehaviour
         _onTrampoline = false;
         _pastApex = false;
         _baselineY = _peakY = CurrentReferenceY();
-    }
-
-    bool IsInCenterRect(Vector2 screenPos)
-    {
-        var cam = Camera.main;
-        return !cam || centerTouchRect.Contains(cam.ScreenToViewportPoint(screenPos));
     }
 
     float AngleFromUpright()

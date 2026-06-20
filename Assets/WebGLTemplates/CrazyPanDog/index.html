@@ -21,6 +21,15 @@
       }
       #unity-canvas {
         background: #1a1a1a;
+        /* Hard-lock the designed portrait aspect ratio so the game is letterboxed
+           to fit any window, iframe, or fullscreen, and never stretched to a wide
+           aspect. !important beats the inline width/height the Unity loader forces
+           on the canvas when entering fullscreen. */
+        height: 100% !important;
+        width: auto !important;
+        aspect-ratio: {{{ WIDTH }}} / {{{ HEIGHT }}};
+        max-width: 100% !important;
+        max-height: 100% !important;
       }
       #unity-loading-bar {
         position: absolute;
@@ -64,17 +73,8 @@
     <script>
       var canvas = document.querySelector("#unity-canvas");
 
-      // Keep the game at its designed portrait aspect ratio and scale it to
-      // fit whatever window or iframe it runs in (itch.io embed, phone, etc).
-      var aspect = {{{ WIDTH }}} / {{{ HEIGHT }}};
-      function resizeCanvas() {
-        var width = Math.min(window.innerWidth, window.innerHeight * aspect);
-        var height = width / aspect;
-        canvas.style.width = width + "px";
-        canvas.style.height = height + "px";
-      }
-      window.addEventListener("resize", resizeCanvas);
-      resizeCanvas();
+      // Aspect ratio and letterboxing are handled in CSS (#unity-canvas), which
+      // survives the inline sizing the Unity loader applies in fullscreen.
 
       function unityShowBanner(msg, type) {
         var warningBanner = document.querySelector("#unity-warning");

@@ -4081,7 +4081,7 @@ MonoBehaviour:
   maxFlipsForBonus: 50
   maxBounceSpeed: 50
   bounceSpeedPerJumpHeight: 0.35
-  maxLandingAngle: 40
+  maxLandingAngle: 41
   perfectLandingAngle: 8
   perfectLandingBounceMultiplier: 1.15
   apexSpeedThreshold: 2
@@ -4090,12 +4090,6 @@ MonoBehaviour:
   apexHeightForFullScale: 40
   maxFallSpeed: 50
   freezeHorizontalPosition: 1
-  centerTouchRect:
-    serializedVersion: 2
-    x: 0.25
-    y: 0.25
-    width: 0.5
-    height: 0.5
   playSurfaceCollider: {fileID: 1482935165}
   playerBodyCollider: {fileID: 1204538550}
 --- !u!114 &1204538554
@@ -5159,7 +5153,7 @@ MonoBehaviour:
   gameOverRankRevealSeconds: 0.35
   gameOverShowDelaySeconds: 1
   useFiniteEndMode: 1
-  goalHeightMeters: 720
+  goalHeightMeters: 800
   endOverlayFadeSeconds: 0.6
   endUfoBoardDelaySeconds: 0.4
   endUfoBoardSeconds: 6
@@ -5223,9 +5217,9 @@ MonoBehaviour:
   girlSprite: {fileID: 4581507254693722895, guid: 0279268dada4a49808a8603f43668847, type: 3}
   manSprite: {fileID: 9198006306900274111, guid: 2142f98b145b85360a569c4abce07439, type: 3}
   alienSprite: {fileID: -1693718450323892024, guid: 07d166bc947f3ce44974e080fa384132, type: 3}
-  girlUnlockFlips: 40
+  girlUnlockFlips: 80
   manUnlockFlips: 10
-  alienUnlockFlips: 80
+  alienUnlockFlips: 120
   showAllOnTitleScreen: 0
   slideInDuration: 0.38
   slideOutDuration: 0.32
@@ -5384,6 +5378,7 @@ MonoBehaviour:
   gameWonSFX: {fileID: 455416194}
   soundMixer: {fileID: 0}
   pitchIncrease: 0.015
+  flipVolumeScale: 0.7
 --- !u!4 &1658797918
 Transform:
   m_ObjectHideFlags: 0

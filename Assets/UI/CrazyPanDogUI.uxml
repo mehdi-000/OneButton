@@ -55,6 +55,12 @@
                     <ui:Label name="game-over-angle-safe" text="SAFE ±25°" class="game-over-angle-safe"/>
                 </ui:VisualElement>
             </ui:VisualElement>
+            <ui:VisualElement name="game-over-time-row" picking-mode="Ignore" class="game-over-extra-stats hidden">
+                <ui:VisualElement picking-mode="Ignore" class="end-stat-row">
+                    <ui:Label text="TIME" class="end-stat-label"/>
+                    <ui:Label name="game-over-time-value" text="0:00.00" class="end-stat-value"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
             <ui:VisualElement name="game-over-rank-badge" class="game-over-rank-badge hidden">
                 <ui:Label name="game-over-rank-caption" text="YOUR RANK" class="game-over-rank-caption"/>
                 <ui:VisualElement name="game-over-rank-value-row" class="game-over-rank-value-row">
@@ -94,6 +100,17 @@
     <ui:VisualElement name="game-end-overlay" picking-mode="Ignore" class="overlay overlay-game-end hidden">
         <ui:VisualElement name="game-end-credits" picking-mode="Ignore" class="game-end-credits hidden">
             <ui:Label text="You made it back to your family!" class="end-message-title"/>
+            <ui:VisualElement picking-mode="Ignore" class="end-credits-list">
+                <ui:Label text="ART" class="end-credit-role"/>
+                <ui:Label text="Marlon Hopp" class="end-credit-name"/>
+                <ui:Label text="SOUND" class="end-credit-role"/>
+                <ui:Label text="David Paßberger" class="end-credit-name"/>
+                <ui:Label text="TECH-ART" class="end-credit-role"/>
+                <ui:Label text="Markus Meier" class="end-credit-name"/>
+                <ui:Label text="CODING" class="end-credit-role"/>
+                <ui:Label text="Mehdi Popal" class="end-credit-name"/>
+                <ui:Label text="Thank you to all our playtesters" class="end-credit-thanks"/>
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
     <ui:VisualElement name="cheering-crowd" picking-mode="Ignore" class="cheering-crowd">
