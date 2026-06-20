@@ -747,6 +747,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2157851957986132205, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 2157851957986132205, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -32.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 4993997269913551414, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -49.38
+      objectReference: {fileID: 0}
+    - target: {fileID: 7043547245782863918, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -85.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7043547245782863918, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -79.5
+      objectReference: {fileID: 0}
     - target: {fileID: 7310987884672603499, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
       propertyPath: m_Name
       value: Kitchen Background
@@ -790,6 +810,18 @@ PrefabInstance:
     - target: {fileID: 8211180632169685604, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058011346555288177, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 102.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058011346555288177, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -78.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058011346555288177, guid: 9bb95bf08ac79b626afed390933f7d56, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -3025,12 +3057,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -8799744451343557633, guid: 8d4a7c2f0767a4e4ca3f4f81a2f7f4fe, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 44cd01e3a407549e284003408d258569, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 16.29, y: 16.22}
+  m_Size: {x: 20.48, y: 20.48}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -4583,7 +4615,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.023432195, y: 2.1774883}
+  m_Offset: {x: -0.023432255, y: 0.55121976}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -4593,7 +4625,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 2.3028302, y: 1.5968466}
+  m_Size: {x: 2.3028302, y: 1.5968477}
   m_EdgeRadius: 0
 --- !u!212 &1482935166
 SpriteRenderer:
